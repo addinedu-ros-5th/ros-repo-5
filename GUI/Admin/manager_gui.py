@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -46,7 +46,7 @@ class BDConnector:
 
 
 
-from_class = uic.loadUiType("GUI/Admin/manager_gui.ui")[0]
+from_class = uic.loadUiType("control_gui/manager_gui.ui")[0]
 #===main window===
 class WindowClass(QMainWindow, BDConnector, from_class) :
     def __init__(self):
@@ -54,9 +54,12 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
         self.setupUi(self)
 
         self.setWindowTitle("Hello, Qt!")
+        self.setFixedSize(750, 550)
 
         self.table_check_flow.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_check_flow.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table_map_info.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table_map_info.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
         self.pbt_exit.clicked.connect(self.exit_window)
 
@@ -166,8 +169,9 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
 class TotalGraph(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("GUI/Admin/total_graph.ui", self)
+        loadUi("control_gui/total_graph.ui", self)
         self.setWindowTitle("Graph")
+        self.setFixedSize(750, 550)
 
         self.fig = plt.Figure()
         self.canvas = FigureCanvas(self.fig)
@@ -214,17 +218,25 @@ class TotalGraph(QDialog):
 class MapInfo(QDialog, BDConnector):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("GUI/Admin/map_info.ui", self)
+        loadUi("control_gui/map_info.ui", self)
         self.setWindowTitle("Map")
+        self.setFixedSize(830, 760)
 
         self.pixmap_map_image = QPixmap()
-        self.pixmap_map_image.load("test_map.png")
+        self.pixmap_map_image.load("control_gui/rh_map_design.png")
         self.pixmap_map_image = self.pixmap_map_image.scaled(self.lb_map.width(), self.lb_map.height())
         
         self.lb_map.setPixmap(self.pixmap_map_image)
         self.map_update()
+        #self.charging_area()
 
+        
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            pos = event.pos()
+            print(f"Clicked at: {pos}")
+            
     def map_update(self):
         try:
             self.connect_to_database()
@@ -245,7 +257,7 @@ class MapInfo(QDialog, BDConnector):
                 font = QFont()
                 font.setFamily("Times")
                 font.setBold(True)
-                font.setPointSize(20)
+                font.setPointSize(15)
                 painter.setFont(font)
 
                 for pk_num, car_num in founds:
@@ -256,18 +268,32 @@ class MapInfo(QDialog, BDConnector):
                         painter.drawText(coords[0], coords[1], car_num)
                     else:
                         print(f"Coordinates not found for PK_NUM:{pk_num}")
+
+                self.charging_area(painter)
                     
                 painter.end  
                 self.lb_map.setPixmap(self.pixmap_map_image)
 
-                    
-                    
-                  
             else:
                 print("Not Found")
 
         except mysql.connector.Error as e:
             print("Error")
+
+    def charging_area(self, painter):
+        c_points = [
+            QPoint(150, 98),
+            QPoint(50, 98),
+            QPoint(50, 325),
+            QPoint(150, 325)
+        ]
+
+        polygon = QPolygon(c_points)
+        painter.setPen(QColor(0, 0, 0))
+        painter.setBrush(QColor(0, 0, 255, 127))  # 반투명 파란색
+        painter.drawPolygon(polygon)
+        
+
         
 
     def closeEvent(self, event):
