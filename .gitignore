@@ -26,7 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 GUI/Admin/DB_set.py
-Main_server/final_project_ros2/src/final_project_gui_package/final_project_gui_package/DB_set.py
+Main_server/final_project_gui_package/final_project_gui_package/DB_set.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
