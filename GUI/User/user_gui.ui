@@ -30,7 +30,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
+       <y>15</y>
        <width>221</width>
        <height>41</height>
       </rect>
@@ -39,32 +39,10 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="text">
-      <string>출차 대기</string>
+      <string>출차 예정</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-    <widget class="QLabel" name="lb_waiting">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>60</y>
-       <width>401</width>
-       <height>481</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color:white</string>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="text">
-      <string>출차 대기 차량 번호가 들어올 곳</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
      </property>
     </widget>
     <widget class="QWidget" name="gridLayoutWidget">
@@ -196,6 +174,55 @@
      <property name="alignment">
       <set>Qt::AlignCenter</set>
      </property>
+    </widget>
+    <widget class="QLabel" name="label_8">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>295</y>
+       <width>221</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="text">
+      <string>출차 대기</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QTableWidget" name="table_ready">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>340</y>
+       <width>401</width>
+       <height>175</height>
+      </rect>
+     </property>
+     <column>
+      <property name="text">
+       <string>car number</string>
+      </property>
+     </column>
+    </widget>
+    <widget class="QTableWidget" name="table_waiting">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>401</width>
+       <height>231</height>
+      </rect>
+     </property>
+     <column>
+      <property name="text">
+       <string>car number</string>
+      </property>
+     </column>
     </widget>
    </widget>
    <widget class="QWidget" name="page_check">
