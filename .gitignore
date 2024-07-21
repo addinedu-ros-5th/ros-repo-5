@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 GUI/Admin/DB_set.py
 Main_server/final_project_gui_package/final_project_gui_package/DB_set.py
+DB_SET.py
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
