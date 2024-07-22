@@ -12,7 +12,7 @@ from std_msgs.msg import String
 import uuid
 
 
-from_class = uic.loadUiType("GUI/User/user_gui.ui")[0]
+from_class = uic.loadUiType("user_gui/user_gui.ui")[0]
 
 class WindowClass(QMainWindow, from_class) :
     def __init__(self, ros2_thread):
@@ -109,15 +109,16 @@ class WindowClass(QMainWindow, from_class) :
         
         if self.car_num_text == "":
             print("not data")
+            self.lb_input_carnum.clear()
         else:
             print(self.car_num_text)
             self.lb_input_carnum.setText(self.car_num_text)
 
 
-    def send_car_out(self, row, column):
+    def send_car_out(self, row, column):   #현재 수정 중
         self.selected_num = self.table_ready.item(row, column).text()
         print("you did selected: ", self.selected_num)
-        send_text = "S" + self.req_out
+        send_text = "S" + self.req_out + "N" + self.selected_num
         self.user_to_server_pub.user_to_server_pub_msg(send_text)
 
         self.car_ready_list = [line for line in self.car_ready_list if self.selected_num not in line]
@@ -199,7 +200,7 @@ class WindowClass(QMainWindow, from_class) :
     #===stkxxx===
     def receive_ros2_data(self, msg):   #server:full car num -> gui
         print("data check: ", msg)
-        if msg[0] == "D" and msg[-1] != "C":
+        if msg[0] == "D" and msg[-1] != "R":   #잠시 고민
             receive_car_num = msg[1:]
             self.car_num_data.append(receive_car_num)
 
@@ -216,7 +217,7 @@ class WindowClass(QMainWindow, from_class) :
                 for row_idx, num_data in enumerate(self.car_num_data):
                     self.table_select_car.setItem(row_idx, 0, QTableWidgetItem(num_data))
 
-        elif msg[0] == "D" and msg[-1] == "C":
+        elif msg[0] == "D" and msg[-1] == "R":   #수정 필요
             ready_com_data = msg[1:-1]
             self.car_waiting_list = [line for line in self.car_waiting_list if ready_com_data not in line]
             self.car_ready_list.append(ready_com_data)

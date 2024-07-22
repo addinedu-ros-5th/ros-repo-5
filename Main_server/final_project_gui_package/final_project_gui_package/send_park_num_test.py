@@ -25,9 +25,12 @@ class TestTest(Node):
             threading.Timer(3.0, self.publish_message, args=(temp,)).start()
 
     def publish_message(self, message):
-        # "R"을 추가한 새로운 메시지 생성
+        step1 = message
+        if step1[0] == "R":
+            step2 = step1[1:]
+
         new_msg = String()
-        new_msg.data = message + "R"
+        new_msg.data = "S" + step2 + "T" + "G1"
         
         # 새로운 메시지 퍼블리시
         self.test_publisher.publish(new_msg)
