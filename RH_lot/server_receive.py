@@ -8,7 +8,6 @@ def handle_client(client_socket):
             if not message:
                 break
             
-            print(f"Received: {message}")
             
             if message.startswith("MATCH:"):
                 print(f"Matching card detected: {message[6:]}")

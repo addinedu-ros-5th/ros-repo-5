@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include "config.h" 
+
 // RFID 1
 #define SS_PIN 5      // SDA(SS) - GPIO5
 #define SCK_PIN 18    // SCK - GPIO18
@@ -15,7 +16,6 @@
 
 #define BUILTIN_LED_PIN 2 // BUILTIN_LED_PIN
 
-byte targetUID[4] = {0xC3, 0x49, 0x6F, 0x96};
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // MFRC522 RFID module
 MFRC522 mfrc522_2(SS_PIN2, RST_PIN2);   // MFRC522 RFID module
 
@@ -54,39 +54,51 @@ void loop() {
 }
 
 void checkRFID(MFRC522 &rfid) {
-  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    Serial.println("Card detected!");
-    String uidString = "";
-    for (byte i = 0; i < rfid.uid.size; i++) {
-      uidString += String(rfid.uid.uidByte[i] < 0x10 ? "0" : "");
-      uidString += String(rfid.uid.uidByte[i], HEX);
+    if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+        Serial.println("Card detected!");
+        String uidString = "";
+        for (byte i = 0; i < rfid.uid.size; i++) {
+            uidString += String(rfid.uid.uidByte[i] < 0x10 ? "0" : "");
+            uidString += String(rfid.uid.uidByte[i], HEX);
+        }
+        Serial.println("Card UID: " + uidString);
+        
+        bool isMatch = false;
+        int matchedIndex = -1;
+
+        for (int i = 1; i < NUM_UIDS; i++) {  // Start from 1 to skip the empty UID at index 0
+            bool currentMatch = true;
+            for (byte j = 0; j < 4; j++) {
+                if (rfid.uid.uidByte[j] != targetUIDs[i].uid[j]) {
+                    currentMatch = false;
+                    break;
+                }
+            }
+            if (currentMatch) {
+                isMatch = true;
+                matchedIndex = i;
+                break;
+            }
+        }
+        
+        if (isMatch) {
+            digitalWrite(BUILTIN_LED_PIN, HIGH);
+            Serial.println("Matching card detected. LED turned ON.");
+            Serial.print("Matched UID Index: ");
+            Serial.println(matchedIndex);
+            sendToServer("MATCH:" + uidString + ",INDEX:" + String(matchedIndex));
+            delay(3000);
+            digitalWrite(BUILTIN_LED_PIN, LOW);
+            Serial.println("LED turned OFF after 3 seconds.");
+        } else {
+            digitalWrite(BUILTIN_LED_PIN, LOW);
+            Serial.println("Non-matching card detected. LED turned OFF.");
+            sendToServer("NOT MATCH:" + uidString);
+        }
+        
+        rfid.PICC_HaltA();
+        rfid.PCD_StopCrypto1();
     }
-    Serial.println("Card UID: " + uidString);
-    
-    bool isMatch = true;
-    for (byte i = 0; i < 4; i++) {
-      if (rfid.uid.uidByte[i] != targetUID[i]) {
-        isMatch = false;
-        break;
-      }
-    }
-    
-    if (isMatch) {
-      digitalWrite(BUILTIN_LED_PIN, HIGH);
-      Serial.println("Matching card detected. LED turned ON.");
-      sendToServer("MATCH:" + uidString);
-      delay(3000);
-      digitalWrite(BUILTIN_LED_PIN, LOW);
-      Serial.println("LED turned OFF after 3 seconds.");
-    } else {
-      digitalWrite(BUILTIN_LED_PIN, LOW);
-      Serial.println("Non-matching card detected. LED turned OFF.");
-      sendToServer("NOMATCH:" + uidString);
-    }
-    
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
-  }
 }
 
 void sendToServer(String message) {
