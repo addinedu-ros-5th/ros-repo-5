@@ -35,7 +35,7 @@ class WaypointNavigator(Node):
         self.odom_subscription = self.create_subscription(Odometry, '/base_controller/odom', self.odom_callback, 10)
         self.amcl_subscription = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.amcl_callback, 10)
         
-        self.send_park_num_publisher = self.create_publisher(String, '/send_park_num', 10)  # Add this line
+        self.send_park_num_publisher = self.create_publisher(String, '/send_park_num', 10)
 
         self.odom_pose = Pose()
         self.amcl_pose = Pose()  # Initialize amcl_pose
@@ -47,13 +47,16 @@ class WaypointNavigator(Node):
         self.angle_tolerance = 0.05
         self.timer = self.create_timer(0.1, self.navigate_to_waypoints)
         self.reached_waypoint = False
-        self.navigation_active = False  # Navigation activity flag
+        self.navigation_active = False
 
         self.linear_pid = PIDController(0.5, 0.0, 0.1)
         self.angular_pid = PIDController(1.0, 0.0, 0.1)
 
         self.last_time = self.get_clock().now()
         self.last_amcl_time = self.get_clock().now()
+
+        self.current_route = ""
+        self.tg1_published = False  # TG1 메시지가 한 번 발행되었는지 확인하는 플래그 변수
 
     def load_waypoints(self):
         waypoints_file = '/home/ros2/pinkbot/src/pinklab_minibot_robot/forward_command/forward_command/waypoints.json'
@@ -72,11 +75,12 @@ class WaypointNavigator(Node):
         if msg.data in routes:
             self.get_logger().info(f'Starting waypoint navigation for route {msg.data}')
             waypoint_indices = routes[msg.data]
-            self.current_waypoints = [self.waypoints_dict[0][i - 1] for i in waypoint_indices]  # Waypoint 인덱스는 1부터 시작하므로 1을 뺌
+            self.current_waypoints = [self.waypoints_dict[0][i - 1] for i in waypoint_indices]
             self.current_waypoint_index = 0
             self.reached_waypoint = False
-            self.navigation_active = True  # Start navigation
-            self.current_route = msg.data  # Store the current route
+            self.navigation_active = True
+            self.current_route = msg.data
+            self.tg1_published = False  # 새로운 작업이 시작될 때 플래그 초기화
         else:
             self.get_logger().info(f'Invalid route: {msg.data}')
 
@@ -88,7 +92,6 @@ class WaypointNavigator(Node):
         self.last_amcl_time = self.get_clock().now()
 
     def get_current_pose(self):
-        # Use AMCL pose if the last update was within 1 second, otherwise use odom pose
         current_time = self.get_clock().now()
         if (current_time - self.last_amcl_time).nanoseconds / 1e9 < 1.0:
             return self.amcl_pose
@@ -103,16 +106,32 @@ class WaypointNavigator(Node):
             self.get_logger().info('All waypoints reached')
             self.navigation_active = False
 
-            # Send message with "R" appended
-            park_num_with_r = self.current_route + 'R'
-            self.get_logger().info(f'Sending message: {park_num_with_r}')
-            msg = String()
-            msg.data = park_num_with_r
-            self.send_park_num_publisher.publish(msg)
+            # 현재 경로에 따라 send_park_num 토픽에 메시지 발행
+            if self.current_route in ['RA2TG1', 'RB2TG1', 'RA2TG2', 'RB2TG2']:
+                if not self.tg1_published:
+                    new_msg = String()
+                    if self.current_route == 'RA2TG1':
+                        new_msg.data = 'SA2TG1'
+                    elif self.current_route == 'RB2TG1':
+                        new_msg.data = 'SB2TG1'
+                    elif self.current_route == 'RA2TG2':
+                        new_msg.data = 'SA2TG2'
+                    elif self.current_route == 'RB2TG2':
+                        new_msg.data = 'SB2TG2'
+                    self.send_park_num_publisher.publish(new_msg)
+                    self.tg1_published = True  # 한 번만 발행되도록 설정
+            elif self.current_route in ['RG1TO1', 'RG1TF1']:
+                new_msg = String()
+                if self.current_route == 'RG1TO1':
+                    new_msg.data = 'SG1TO1'
+                elif self.current_route == 'RG1TF1':
+                    new_msg.data = 'SG1TF1'
+                self.send_park_num_publisher.publish(new_msg)
+
             return
 
         goal = self.current_waypoints[self.current_waypoint_index]
-        goal_x, goal_y, goal_yaw = goal['x'], goal['y'], goal['z']
+        goal_x, goal_y = goal['x'], goal['y']
         current_pose = self.get_current_pose()
         current_x = current_pose.position.x
         current_y = current_pose.position.y
@@ -127,17 +146,9 @@ class WaypointNavigator(Node):
             self.reached_waypoint = True
 
         if self.reached_waypoint:
-            current_yaw = self.get_yaw_from_quaternion(current_pose.orientation)
-            angle_diff = self.normalize_angle(goal_yaw - current_yaw)
-
-            if abs(angle_diff) < self.angle_tolerance:
-                self.get_logger().info(f'Orientation at waypoint {self.current_waypoint_index} achieved')
-                self.current_waypoint_index += 1
-                self.reached_waypoint = False
-            else:
-                cmd = Twist()
-                cmd.angular.z = self.angular_pid.compute(angle_diff, 0, dt)
-                self.publisher_.publish(cmd)
+            self.get_logger().info(f'Orientation at waypoint {self.current_waypoint_index} achieved')
+            self.current_waypoint_index += 1
+            self.reached_waypoint = False
         else:
             angle_to_goal = math.atan2(goal_y - current_y, goal_x - current_x)
             current_yaw = self.get_yaw_from_quaternion(current_pose.orientation)
@@ -148,8 +159,18 @@ class WaypointNavigator(Node):
                 cmd.angular.z = self.angular_pid.compute(angle_diff, 0, dt)
             else:
                 cmd.linear.x = self.linear_pid.compute(distance, 0, dt)
-                cmd.angular.z = self.angular_pid.compute(angle_diff, 0, dt)
+            cmd.angular.z = self.angular_pid.compute(angle_diff, 0, dt)
             self.publisher_.publish(cmd)
+
+    def start_navigation(self, route):
+        self.get_logger().info(f'Starting waypoint navigation for route {route}')
+        _, routes = self.waypoints_dict
+        waypoint_indices = routes[route]
+        self.current_waypoints = [self.waypoints_dict[0][i - 1] for i in waypoint_indices]
+        self.current_waypoint_index = 0
+        self.reached_waypoint = False
+        self.navigation_active = True
+        self.current_route = route
 
     def get_yaw_from_quaternion(self, orientation):
         siny_cosp = 2 * (orientation.w * orientation.z + orientation.x * orientation.y)
