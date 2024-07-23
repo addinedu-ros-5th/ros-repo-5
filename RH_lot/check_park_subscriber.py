@@ -2,7 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-class PlateTimestampSubscriber(Node):
+class CheckSubscriber(Node):
     def __init__(self):
         super().__init__('check_park_subscriber')
         self.plate_subscription = self.create_subscription(
@@ -11,7 +11,7 @@ class PlateTimestampSubscriber(Node):
             self.plate_listener_callback,
             10
         )
-        self.get_logger().info('Subscribed to plate_topic')
+        self.get_logger().info('Subscribed to check_park_topic')
 
     def plate_listener_callback(self, msg):
         plate_number = msg.data
@@ -20,7 +20,7 @@ class PlateTimestampSubscriber(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = PlateTimestampSubscriber()
+    node = CheckSubscriber()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
