@@ -32,19 +32,17 @@ class WaypointNavigator(Node):
             self.listener_callback,
             10)
         self.publisher_ = self.create_publisher(Twist, '/base_controller/cmd_vel_unstamped', 10)
-        self.odom_subscription = self.create_subscription(Odometry, '/base_controller/odom', self.odom_callback, 10)
         self.amcl_subscription = self.create_subscription(PoseWithCovarianceStamped, '/amcl_pose', self.amcl_callback, 10)
         
         self.send_park_num_publisher = self.create_publisher(String, '/send_park_num', 10)
 
-        self.odom_pose = Pose()
         self.amcl_pose = Pose()  # Initialize amcl_pose
 
         self.waypoints_dict = self.load_waypoints()
         self.current_waypoints = []
         self.current_waypoint_index = 0
-        self.tolerance = 0.1
-        self.angle_tolerance = 0.05
+        self.tolerance = 0.2
+        self.angle_tolerance = 0.2
         self.timer = self.create_timer(0.1, self.navigate_to_waypoints)
         self.reached_waypoint = False
         self.navigation_active = False
@@ -53,7 +51,6 @@ class WaypointNavigator(Node):
         self.angular_pid = PIDController(1.0, 0.0, 0.1)
 
         self.last_time = self.get_clock().now()
-        self.last_amcl_time = self.get_clock().now()
 
         self.current_route = ""
         self.tg1_published = False  # TG1 메시지가 한 번 발행되었는지 확인하는 플래그 변수
@@ -62,7 +59,7 @@ class WaypointNavigator(Node):
         waypoints_file = '/home/ros2/pinkbot/src/pinklab_minibot_robot/forward_command/forward_command/waypoints.json'
         if not os.path.exists(waypoints_file):
             self.get_logger().error(f'Waypoints file not found: {waypoints_file}')
-            return {}
+            return {}, {}
         with open(waypoints_file, 'r') as f:
             data = json.load(f)
         waypoints = data['waypoints']
@@ -84,19 +81,11 @@ class WaypointNavigator(Node):
         else:
             self.get_logger().info(f'Invalid route: {msg.data}')
 
-    def odom_callback(self, msg):
-        self.odom_pose = msg.pose.pose
-
     def amcl_callback(self, msg):
         self.amcl_pose = msg.pose.pose
-        self.last_amcl_time = self.get_clock().now()
 
     def get_current_pose(self):
-        current_time = self.get_clock().now()
-        if (current_time - self.last_amcl_time).nanoseconds / 1e9 < 1.0:
-            return self.amcl_pose
-        else:
-            return self.odom_pose
+        return self.amcl_pose
 
     def navigate_to_waypoints(self):
         if not self.navigation_active:
@@ -155,7 +144,7 @@ class WaypointNavigator(Node):
             angle_diff = self.normalize_angle(angle_to_goal - current_yaw)
 
             cmd = Twist()
-            if abs(angle_diff) > 0.2:
+            if abs(angle_diff) > self.angle_tolerance:
                 cmd.angular.z = self.angular_pid.compute(angle_diff, 0, dt)
             else:
                 cmd.linear.x = self.linear_pid.compute(distance, 0, dt)
@@ -194,3 +183,4 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
