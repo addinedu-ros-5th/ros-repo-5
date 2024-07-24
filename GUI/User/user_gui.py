@@ -12,7 +12,7 @@ from std_msgs.msg import String
 import uuid
 
 
-from_class = uic.loadUiType("user_gui/user_gui.ui")[0]
+from_class = uic.loadUiType("GUI/User/user_gui.ui")[0]
 
 class WindowClass(QMainWindow, from_class) :
     def __init__(self, ros2_thread):
@@ -37,6 +37,7 @@ class WindowClass(QMainWindow, from_class) :
         self.car_num_text = ""   #4 car num
         self.selected_num = ""   #선택된 차량, lb_carnum에 들어갈 번호가 저장되는 변수
         self.car_waiting_list = []   #출차 예정 차량 리스트
+        self.history_waiting_list = []   #출차 예정 차량 리스트 기록
         self.car_ready_list = []   #출차 대기 차량 리스트(출차 예정 -> 출차 대기)
 
         #===message data===
@@ -162,8 +163,12 @@ class WindowClass(QMainWindow, from_class) :
             send_text = "S" + self.req_ready
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:out_signal
             self.stk_user.setCurrentIndex(0)
-            self.car_waiting_list.append(self.selected_num)
-            print("HEOL",self.car_waiting_list)
+            if self.selected_num not in self.history_waiting_list:
+                self.car_waiting_list.append(self.selected_num)
+                self.history_waiting_list.append(self.selected_num)
+                print("HEOL",self.car_waiting_list)
+            else:
+                print("이미 요청된 차량")
             self.table_waiting.setRowCount(len(self.car_waiting_list))
             self.table_waiting.setColumnCount(1)
             for row_idx, row_data in enumerate(self.car_waiting_list):

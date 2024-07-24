@@ -46,7 +46,7 @@ class BDConnector:
 
 
 
-from_class = uic.loadUiType("control_gui/manager_gui.ui")[0]
+from_class = uic.loadUiType("GUI/Admin/manager_gui.ui")[0]
 #===main window===
 class WindowClass(QMainWindow, BDConnector, from_class) :
     def __init__(self):
@@ -169,7 +169,7 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
 class TotalGraph(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("control_gui/total_graph.ui", self)
+        loadUi("GUI/Admin/total_graph.ui", self)
         self.setWindowTitle("Graph")
         self.setFixedSize(750, 550)
 
@@ -218,12 +218,12 @@ class TotalGraph(QDialog):
 class MapInfo(QDialog, BDConnector):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("control_gui/map_info.ui", self)
+        loadUi("GUI/Admin/map_info.ui", self)
         self.setWindowTitle("Map")
-        self.setFixedSize(830, 760)
+        self.setFixedSize(720, 820)
 
         self.pixmap_map_image = QPixmap()
-        self.pixmap_map_image.load("control_gui/rh_map_design.png")
+        self.pixmap_map_image.load("GUI/Admin/park_map.png")
         self.pixmap_map_image = self.pixmap_map_image.scaled(self.lb_map.width(), self.lb_map.height())
         
         self.lb_map.setPixmap(self.pixmap_map_image)
@@ -280,12 +280,12 @@ class MapInfo(QDialog, BDConnector):
         except mysql.connector.Error as e:
             print("Error")
 
-    def charging_area(self, painter):
+    def charging_area(self, painter):   #충전 구역 표시
         c_points = [
-            QPoint(150, 98),
-            QPoint(50, 98),
-            QPoint(50, 325),
-            QPoint(150, 325)
+            QPoint(120, 50),
+            QPoint(18, 50),
+            QPoint(18, 320),
+            QPoint(120, 320)
         ]
 
         polygon = QPolygon(c_points)

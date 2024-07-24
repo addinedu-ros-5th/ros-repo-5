@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>830</width>
-    <height>760</height>
+    <width>720</width>
+    <height>820</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,8 +18,8 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>810</width>
-     <height>740</height>
+     <width>701</width>
+     <height>801</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -32,7 +32,7 @@
   <widget class="QPushButton" name="pbt_test">
    <property name="geometry">
     <rect>
-     <x>688</x>
+     <x>660</x>
      <y>10</y>
      <width>41</width>
      <height>31</height>
