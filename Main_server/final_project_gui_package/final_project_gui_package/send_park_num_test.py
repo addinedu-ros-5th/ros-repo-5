@@ -15,27 +15,38 @@ class TestTest(Node):
         self.test_publisher = self.create_publisher(String, '/send_park_num', 10)
         self.message_being_processed = False  # 메시지 처리 중 여부를 추적
 
+        self.test_flag = False
+
     def test_callback(self, msg):
         if not self.message_being_processed:  # 메시지가 처리 중이 아니면
             self.message_being_processed = True
             temp = msg.data  # 문자열로 데이터를 가져옴
             self.get_logger().info(f'Received message: {temp}')
+
+            new_msg = String()
+            new_msg.data = "S" + "A2" + "T" + "G1"
+        
+        # 새로운 메시지 퍼블리시
+            self.test_publisher.publish(new_msg)
+            self.get_logger().info(f'Published message: {new_msg.data}')
+            self.test_flag = True
             
             # 3초 대기 후 발행
-            threading.Timer(3.0, self.publish_message, args=(temp,)).start()
+#            threading.Timer(3.0, self.publish_message, args=(temp,)).start()
 
     def publish_message(self, message):
         step1 = message
         if step1[0] == "R":
-            step2 = step1[1:]
+            step2 = step1[1:3]
 
         new_msg = String()
         new_msg.data = "S" + step2 + "T" + "G1"
         
         # 새로운 메시지 퍼블리시
-        self.test_publisher.publish(new_msg)
-        self.get_logger().info(f'Published message: {new_msg.data}')
-        
+        if self.test_flag == False:
+            self.test_publisher.publish(new_msg)
+            self.get_logger().info(f'Published message: {new_msg.data}')
+            self.test_flag = True
         # 플래그를 초기화하여 다음 메시지를 받을 수 있게 함
         self.message_being_processed = False
 
