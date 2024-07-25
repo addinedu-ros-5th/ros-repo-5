@@ -75,6 +75,8 @@ class WindowClass(QMainWindow, from_class) :
         self.table_ready.setEditTriggers(QAbstractItemView.NoEditTriggers)
 #        self.table_ready.cellClicked.connect(self.)
 
+        self.pbt_test.clicked.connect(lambda: self.back_page_input_num(9))
+
         #===stack1:page_check===
         self.pbt_check_cancle.clicked.connect(lambda: self.back_page_input_num(0))
         self.pbt_out_signal.clicked.connect(lambda: self.back_page_input_num(1))
@@ -188,6 +190,11 @@ class WindowClass(QMainWindow, from_class) :
             self.stk_user.setCurrentIndex(0)
             self.car_num_data = []
             print("back select")
+
+        elif status == 9:   #test
+            send_text = "S" + "test"
+            self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal2->0
+            
 
         
 

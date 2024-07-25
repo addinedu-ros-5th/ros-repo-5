@@ -275,6 +275,19 @@
       </property>
      </column>
     </widget>
+    <widget class="QPushButton" name="pbt_test">
+     <property name="geometry">
+      <rect>
+       <x>330</x>
+       <y>20</y>
+       <width>89</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>test</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="page_check">
     <widget class="QLabel" name="label_7">

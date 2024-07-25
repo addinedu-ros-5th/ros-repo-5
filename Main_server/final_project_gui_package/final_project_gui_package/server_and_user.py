@@ -57,6 +57,17 @@ class Server_And_User(Node, BDConnector):
             10)
         self.park_num_sub
 
+#===================================
+
+        self.rfid_signal_sub = self.create_subscription(   #receive rfid signal
+            String,
+            "/from_rfid_signal",
+            self.rfid_signal_listner_callback,
+            10)
+        self.rfid_signal_sub
+
+#===================================
+
         self.server_to_user_pub = self.create_publisher(String, "/server_to_user", 10)   #send data to user gui
         self.park_num_pub = self.create_publisher(String, "/send_park_num", 10)   #send data to another server
 
@@ -121,7 +132,6 @@ class Server_And_User(Node, BDConnector):
                     user_signal = received_data[1:]   #("S" + signal)
                     if user_signal == "req_ready":   #push pbt_out_signal
                         self.cpk_num_list.append(self.cpk_num_text)
-                        print("check cpk_num_list: ", self.cpk_num_list)   #test
                         
                         query = "SELECT PK_NUM, PK_STATUS FROM PARK_INFO WHERE PK_NUM LIKE 'G%'"   #find park num G and status
                         self.cursor.execute(query)
@@ -170,7 +180,7 @@ class Server_And_User(Node, BDConnector):
                         send_park_text_msg.data = "R" + update_park_num + "T" + goal_park_num   #RG1TO1 or RG1TF1(timeout)
                         self.park_num_pub.publish(send_park_text_msg)
                         if goal_park_num == "OX":
-                            self.wait_line_O.append(goal_park_num)
+                            self.wait_line_O.append(send_park_text_msg.data)
                         else:
                             query = "UPDATE PARK_INFO SET PK_STATUS=%s WHERE PK_NUM=%s"
                             self.cursor.execute(query, ('F', update_park_num,))
@@ -188,6 +198,12 @@ class Server_And_User(Node, BDConnector):
                                 self.cursor.execute(query, ('F', wait_start_park_num,))
                                 self.cursor.execute(query, ('T', update_park_num,))
                                 self.connection.commit()
+
+
+                    elif user_signal == "test":
+                        send_park_text_msg.data = "GOGO"
+                        self.park_num_pub.publish(send_park_text_msg)
+
 
                     else:   #req_cancle
                         print("req_cancle")
@@ -283,7 +299,49 @@ class Server_And_User(Node, BDConnector):
                         self.connection.commit()
 
             except Error as e:
-                self.get_logger.error("DB error in timeout_timer_callback")
+                self.get_logger().error("DB error in timeout_timer_callback")
+
+
+    #==================================
+    def rfid_signal_listner_callback(self, msg):
+        received_data = msg.data
+        send_park_text_msg = String()
+
+        if self.connection and self.cursor:
+            try:
+                if received_data[0] == "O":  #ok
+                    query = "SELECT CAR_NUM FROM CAR_INFO WHERE PK_NUM='O1'"
+                    self.cursor.execute(query)
+                    find_result = self.cursor.fetchone()
+                    out_car_num = find_result[0]
+
+                    query = "DELETE FROM CAR_INFO WHERE CAR_NUM=%s"
+                    self.cursor.execute(query, (out_car_num,))
+                    query = "UPDATE PARK_INFO SET PK_STATUS='F' WHERE PK_NUM='O1'"
+                    self.cursor.execute(query)
+                    self.connection.commit()
+
+                    if self.wait_line_O and self.wait_line_O[0]:
+                        step1 = self.wait_line_O[0]
+                        self.wait_line_O.pop(0)
+                        wait_start_park_num = step1[1:3]
+                        send_park_text_msg.data = "R" + wait_start_park_num + "T" + "O1"   #RG2TOX -> RG2TO1
+                        self.park_num_pub.publish(send_park_text_msg)
+
+                        query = "UPDATE PARK_INFO SET PK_STATUS=%s WHERE PK_NUM=%s"
+                        self.cursor.execute(query, ('F', wait_start_park_num,))
+                        self.cursor.execute(query, ('F', 'O1'))
+                        self.connection.commit()
+
+                    for each in self.cpk_num_list:
+                        if out_car_num in each:
+                            step1 = each
+                            self.cpk_num_list = [item for item in self.cpk_num_list if item != each]
+
+            except Error as e:
+                self.get_logger().error("DB error in rfid_signal_listner_callback")
+
+    #==================================
 
 
     def __del__(self):
