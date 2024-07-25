@@ -23,7 +23,8 @@ setup(
             'gui_test_node = final_project_gui_package.gui_test_node:main',
             "send_park_num_test = final_project_gui_package.send_park_num_test:main",
             "server_and_user = final_project_gui_package.server_and_user:main",
-            "out_signal_pre = final_project_gui_package.out_signal_pre:main"
+            "out_signal_pre = final_project_gui_package.out_signal_pre:main",
+            "in_park_area = final_project_gui_package.in_park_area:main"
         ],
     },
 )

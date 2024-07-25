@@ -35,7 +35,7 @@ class BDConnector:
 
 class Server_And_User(Node, BDConnector):
     def __init__(self):
-        Node.__init__(self, 'test9898')
+        Node.__init__(self, 'test_out_car')
         BDConnector.__init__(self)
 
         if self.connect_to_database():
