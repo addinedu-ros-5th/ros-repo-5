@@ -14,7 +14,7 @@
    <string>Dialog</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color:gray</string>
+   <string notr="true"/>
   </property>
   <widget class="QStackedWidget" name="stk_user">
    <property name="geometry">
@@ -288,6 +288,30 @@
       <string>test</string>
      </property>
     </widget>
+    <widget class="QLabel" name="background_color1">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>750</width>
+       <height>550</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:gray</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <zorder>background_color1</zorder>
+    <zorder>label_3</zorder>
+    <zorder>gridLayoutWidget</zorder>
+    <zorder>lb_input_carnum</zorder>
+    <zorder>label_8</zorder>
+    <zorder>table_ready</zorder>
+    <zorder>table_waiting</zorder>
+    <zorder>pbt_test</zorder>
    </widget>
    <widget class="QWidget" name="page_check">
     <widget class="QLabel" name="label_7">
@@ -489,6 +513,33 @@
       <string>cancle</string>
      </property>
     </widget>
+    <widget class="QLabel" name="background_color2">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>750</width>
+       <height>550</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:gray</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <zorder>background_color2</zorder>
+    <zorder>label_7</zorder>
+    <zorder>lb_carnum</zorder>
+    <zorder>label_4</zorder>
+    <zorder>label_5</zorder>
+    <zorder>lb_in_time</zorder>
+    <zorder>lb_out_time</zorder>
+    <zorder>lb_spend</zorder>
+    <zorder>pbt_out_signal</zorder>
+    <zorder>label_6</zorder>
+    <zorder>pbt_check_cancle</zorder>
    </widget>
    <widget class="QWidget" name="page_select">
     <widget class="QLabel" name="label">
@@ -560,6 +611,26 @@
       <string>cancle</string>
      </property>
     </widget>
+    <widget class="QLabel" name="background_color3">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>750</width>
+       <height>550</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:gray</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <zorder>background_color3</zorder>
+    <zorder>label</zorder>
+    <zorder>table_select_car</zorder>
+    <zorder>pbt_select_cancle</zorder>
    </widget>
   </widget>
  </widget>

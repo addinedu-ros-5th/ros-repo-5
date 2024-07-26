@@ -46,8 +46,8 @@ class In_Park_Area(Node, BDConnector):
 
         self.rfid_signal_sub = self.create_subscription(   #receive rfid signal
             String,
-            "/from_rfid_signal",
-            self.rfid_signal_listner_callback,
+            "/in_time_topic",
+            self.in_time_listner_callback,
             10)
         self.rfid_signal_sub
 
@@ -66,14 +66,13 @@ class In_Park_Area(Node, BDConnector):
 
 
 
-    def rfid_signal_listner_callback(self, msg):
+    def in_time_listner_callback(self, msg):
         received_data = msg.data
         send_park_text_msg = String()
 
         if self.connection and self.cursor:
             try:
-                if received_data[0] == "I":
-                    print("receive: I")   #ok
+                if received_data:
                     query = "SELECT CAR_NUM FROM CAR_INFO WHERE PK_NUM='I1'"
                     self.cursor.execute(query)
                     step1 = self.cursor.fetchone()
@@ -99,7 +98,6 @@ class In_Park_Area(Node, BDConnector):
                     if goal_park_num:
                         in_car_num_text = in_car_num + ", " + goal_park_num
                         self.in_car_list.append(in_car_num_text)
-                        print("in_car_num_text: ", in_car_num_text)   #ok
 
                         send_park_text_msg.data = "R" + "I1" + "T" + goal_park_num
                         self.empty_park_num_pub.publish(send_park_text_msg)
@@ -131,13 +129,9 @@ class In_Park_Area(Node, BDConnector):
                             step1 = each
                             self.in_car_list = [item for item in self.in_car_list if item != each]
 
-                    print("step1: ", step1)
 
                     step2 = re.split(", ", step1)   #take car num to update
-                    print("step2-0: ", step2[0])
-                    print("step2-1: ", step2[1])
                     update_car_num = step2[0]
-                    print("update_car_num: ", update_car_num)
 
                     query = "UPDATE CAR_INFO SET PK_NUM=%s WHERE CAR_NUM=%s"
                     self.cursor.execute(query, (end_park_num, update_car_num,))

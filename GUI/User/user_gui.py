@@ -12,7 +12,7 @@ from std_msgs.msg import String
 import uuid
 
 
-from_class = uic.loadUiType("GUI/User/user_gui.ui")[0]
+from_class = uic.loadUiType("GUI/User/user_gui.ui")[0]   #change path
 
 class WindowClass(QMainWindow, from_class) :
     def __init__(self, ros2_thread):
@@ -24,14 +24,14 @@ class WindowClass(QMainWindow, from_class) :
         self.setFixedSize(750, 550)
         button_list = [self.pbt_num1, self.pbt_num2, self.pbt_num3, self.pbt_num4, self.pbt_num5,
                        self.pbt_num6, self.pbt_num7, self.pbt_num8, self.pbt_num9, self.pbt_undo]
-        for button in button_list:
+        for button in button_list:   #button size setting
             button.setFixedSize(95, 95)
         self.pbt_num0.setFixedSize(197, 95)
 
 
         #===setting===
         self.ros2_thread = ros2_thread
-        self.ros2_thread.rx_signal.connect(self.receive_ros2_data)
+        self.ros2_thread.rx_signal.connect(self.receive_ros2_data)   #if receive data from ros2
 
         self.car_num_data = []   #full car_num
         self.car_num_text = ""   #4 car num
@@ -54,7 +54,7 @@ class WindowClass(QMainWindow, from_class) :
         
 
         #===stack0:page_input_num===
-        self.pbt_num0.clicked.connect(lambda: self.input_num_from_pbt(0))
+        self.pbt_num0.clicked.connect(lambda: self.input_num_from_pbt(0))   #input num
         self.pbt_num1.clicked.connect(lambda: self.input_num_from_pbt(1))
         self.pbt_num2.clicked.connect(lambda: self.input_num_from_pbt(2))
         self.pbt_num3.clicked.connect(lambda: self.input_num_from_pbt(3))
@@ -64,21 +64,20 @@ class WindowClass(QMainWindow, from_class) :
         self.pbt_num7.clicked.connect(lambda: self.input_num_from_pbt(7))
         self.pbt_num8.clicked.connect(lambda: self.input_num_from_pbt(8))
         self.pbt_num9.clicked.connect(lambda: self.input_num_from_pbt(9))
-        self.pbt_undo.clicked.connect(self.remove_num)
+        self.pbt_undo.clicked.connect(self.remove_num)   #remove num
         
-        self.timer_stk01.timeout.connect(self.move_page_check)
+        self.timer_stk01.timeout.connect(self.move_page_check)   #move page timer
         self.timer_stk02.timeout.connect(self.move_page_select)
 
-        self.table_waiting.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table_waiting.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_waiting.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)   #table column size setting
+        self.table_waiting.setEditTriggers(QAbstractItemView.NoEditTriggers)   #fix data
         self.table_ready.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_ready.setEditTriggers(QAbstractItemView.NoEditTriggers)
-#        self.table_ready.cellClicked.connect(self.)
 
-        self.pbt_test.clicked.connect(lambda: self.back_page_input_num(9))
+        self.pbt_test.clicked.connect(lambda: self.back_page_input_num(9))   #move page:test
 
         #===stack1:page_check===
-        self.pbt_check_cancle.clicked.connect(lambda: self.back_page_input_num(0))
+        self.pbt_check_cancle.clicked.connect(lambda: self.back_page_input_num(0))   #move page
         self.pbt_out_signal.clicked.connect(lambda: self.back_page_input_num(1))
 
         
@@ -96,18 +95,16 @@ class WindowClass(QMainWindow, from_class) :
         
 
     #===stk0 function===
-    def input_num_from_pbt(self, num):
+    def input_num_from_pbt(self, num):   #input num
         if len(self.car_num_text) < 4:
             self.car_num_text += str(num)
-        #print(self.car_num_text)
         self.lb_input_carnum.setText(self.car_num_text)
 
         if len(self.car_num_text) == 4:
             send_text = "D" + self.car_num_text
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #gui:4 car num -> server
 
-
-    def remove_num(self):
+    def remove_num(self):   #remove num
         self.car_num_text = self.car_num_text[:-1]
         
         if self.car_num_text == "":
@@ -118,9 +115,8 @@ class WindowClass(QMainWindow, from_class) :
             self.lb_input_carnum.setText(self.car_num_text)
 
 
-    def send_car_out(self, row, column):   #현재 수정 중
+    def send_car_out(self, row, column):   #G1 or F1 -> O1:send req_out Signal
         self.selected_num = self.table_ready.item(row, column).text()
-        print("you did selected: ", self.selected_num)
         send_text = "S" + self.req_out + "N" + self.selected_num
         self.user_to_server_pub.user_to_server_pub_msg(send_text)
 
@@ -131,15 +127,12 @@ class WindowClass(QMainWindow, from_class) :
             self.table_ready.setItem(row_idx, 0, QTableWidgetItem(row_data))
         
 
-
-        
-
     def move_page_check(self):
         self.timer_stk01.stop()
         self.stk_user.setCurrentIndex(1)
         self.lb_carnum.setText(self.selected_num)
         self.clear_input_carnum()
-        
+            
     def move_page_select(self):
         self.timer_stk02.stop()
         self.stk_user.setCurrentIndex(2)
@@ -151,7 +144,7 @@ class WindowClass(QMainWindow, from_class) :
         self.car_num_text = ""
 
 
-    def back_page_input_num(self, status):   #cancle button and out signal
+    def back_page_input_num(self, status):   #cancle button and req_ready
         if status == 0:   #stk1 -> 0:page_check cancle
             send_text = "S" + self.req_cancle
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal1->0
@@ -162,28 +155,31 @@ class WindowClass(QMainWindow, from_class) :
             print("Reset")
 
         elif status == 1:   #stk1 -> 0:send out signal
-            send_text = "S" + self.req_ready
-            self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:out_signal
-            self.stk_user.setCurrentIndex(0)
-            if self.selected_num not in self.history_waiting_list:
-                self.car_waiting_list.append(self.selected_num)
-                self.history_waiting_list.append(self.selected_num)
-                print("HEOL",self.car_waiting_list)
-            else:
-                print("이미 요청된 차량")
-            self.table_waiting.setRowCount(len(self.car_waiting_list))
-            self.table_waiting.setColumnCount(1)
-            for row_idx, row_data in enumerate(self.car_waiting_list):
-                self.table_waiting.setItem(row_idx, 0, QTableWidgetItem(row_data))
-            #self.table_waiting.update()
-
-            #라벨에 채우는 코드를 여기 채울 예정
-            self.selected_num = ""
-            self.lb_carnum.clear()
-            print("Signal")
-            self.car_num_data = []
+            reply = QMessageBox.question(self, "check again", "정말 출차하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             
+            if reply == QMessageBox.Yes:
+                send_text = "S" + self.req_ready
+                self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:out_signal
+                self.stk_user.setCurrentIndex(0)
+                if self.selected_num not in self.history_waiting_list:
+                    self.car_waiting_list.append(self.selected_num)
+                    self.history_waiting_list.append(self.selected_num)
+                else:
+                    print("이미 요청된 차량")
+                    QMessageBox.information(self, "info", "이미 요청된 차량입니다.")
 
+                self.table_waiting.setRowCount(len(self.car_waiting_list))
+                self.table_waiting.setColumnCount(1)
+                for row_idx, row_data in enumerate(self.car_waiting_list):
+                    self.table_waiting.setItem(row_idx, 0, QTableWidgetItem(row_data))
+
+                self.selected_num = ""
+                self.lb_carnum.clear()
+                print("Signal")
+                self.car_num_data = []
+            else:
+                return
+            
         elif status == 2:   #stk2 -> 0:page_select cancle
             send_text = "S" + self.req_cancle
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal2->0
@@ -195,10 +191,6 @@ class WindowClass(QMainWindow, from_class) :
             send_text = "S" + "test"
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal2->0
             
-
-        
-
-    
 
     #===stk2 function===
     def select_to_check(self, row, column):
@@ -212,7 +204,7 @@ class WindowClass(QMainWindow, from_class) :
     #===stkxxx===
     def receive_ros2_data(self, msg):   #server:full car num -> gui
         print("data check: ", msg)
-        if msg[0] == "D" and msg[-1] != "R":   #잠시 고민
+        if msg[0] == "D" and msg[-1] != "R":
             receive_car_num = msg[1:]
             self.car_num_data.append(receive_car_num)
 
@@ -229,7 +221,7 @@ class WindowClass(QMainWindow, from_class) :
                 for row_idx, num_data in enumerate(self.car_num_data):
                     self.table_select_car.setItem(row_idx, 0, QTableWidgetItem(num_data))
 
-        elif msg[0] == "D" and msg[-1] == "R":   #수정 필요
+        elif msg[0] == "D" and msg[-1] == "R":   #table_waiting -> table_ready
             ready_com_data = msg[1:-1]
             self.car_waiting_list = [line for line in self.car_waiting_list if ready_com_data not in line]
             self.car_ready_list.append(ready_com_data)

@@ -61,8 +61,8 @@ class Server_And_User(Node, BDConnector):
 
         self.rfid_signal_sub = self.create_subscription(   #receive rfid signal
             String,
-            "/from_rfid_signal",
-            self.rfid_signal_listner_callback,
+            "/out_time_topic",
+            self.out_time_listner_callback,
             10)
         self.rfid_signal_sub
 
@@ -303,13 +303,13 @@ class Server_And_User(Node, BDConnector):
 
 
     #==================================
-    def rfid_signal_listner_callback(self, msg):
+    def out_time_listner_callback(self, msg):
         received_data = msg.data
         send_park_text_msg = String()
 
         if self.connection and self.cursor:
             try:
-                if received_data[0] == "O":  #ok
+                if received_data:  #ok
                     query = "SELECT CAR_NUM FROM CAR_INFO WHERE PK_NUM='O1'"
                     self.cursor.execute(query)
                     find_result = self.cursor.fetchone()
@@ -339,7 +339,7 @@ class Server_And_User(Node, BDConnector):
                             self.cpk_num_list = [item for item in self.cpk_num_list if item != each]
 
             except Error as e:
-                self.get_logger().error("DB error in rfid_signal_listner_callback")
+                self.get_logger().error("DB error in out_time_listner_callback")
 
     #==================================
 

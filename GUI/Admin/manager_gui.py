@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QTimer
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -16,8 +16,7 @@ import numpy as np
 
 #from PyQt5.QtWidgets import QWidget
 
-#다음 목표:그래프 그릴 수 있도록 틀 잡아두기(절반만 수행)
-#       :좌표 구하기?
+#다음 목표:그래프 그릴 수 있도록 틀 생성
 #       :타이머 -> 신호를 통해 맵 및 정보 업데이트
 
 #===setting===
@@ -44,9 +43,7 @@ class BDConnector:
             print(f"Error: {e}")
 
 
-
-
-from_class = uic.loadUiType("GUI/Admin/manager_gui.ui")[0]
+from_class = uic.loadUiType("GUI/Admin/manager_gui.ui")[0]   #change path
 #===main window===
 class WindowClass(QMainWindow, BDConnector, from_class) :
     def __init__(self):
@@ -76,23 +73,32 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
         self.page_login.setFocus()
         self.opened_window = []
 
+        self.flag_open_graph = False
+        self.flag_open_map = False
+
         self.load_map_info()
 
 
     #===open window function===
     def open_total_graph(self):
-        #self.hide()
-        self.graph_window = TotalGraph(self)
-        self.graph_window.move(self.pos())
-        self.graph_window.show()
-        self.opened_window.append(self.graph_window)
+        if self.flag_open_graph == False:
+            self.graph_window = TotalGraph(self)
+            self.graph_window.move(self.pos())
+            self.graph_window.show()
+            self.opened_window.append(self.graph_window)
+            self.flag_open_graph = True
+        else:
+            pass
 
     def open_map_info(self):
-        #self.hide()
-        self.map_window = MapInfo(self)
-        self.map_window.move(self.pos())
-        self.map_window.show()
-        self.opened_window.append(self.map_window)
+        if self.flag_open_map == False:
+            self.map_window = MapInfo(self)
+            self.map_window.move(self.pos())
+            self.map_window.show()
+            self.opened_window.append(self.map_window)
+            self.flag_open_map = True
+        else:
+            pass
 
 
     #======
@@ -169,33 +175,62 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
 class TotalGraph(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("GUI/Admin/total_graph.ui", self)
+        loadUi("GUI/Admin/total_graph.ui", self)   #change path
         self.setWindowTitle("Graph")
         self.setFixedSize(750, 550)
 
-        self.fig = plt.Figure()
+        self.fig = plt.Figure()   #day_in
         self.canvas = FigureCanvas(self.fig)
-        self.fig3 = plt.Figure()
-        self.canvas3 = FigureCanvas(self.fig3)
+        self.fig2 = plt.Figure()   #hour_in
+        self.canvas2 = FigureCanvas(self.fig2)
 
-        self.layout_test.addWidget(self.canvas)
-        self.layout_test3.addWidget(self.canvas3)
+        self.fig3 = plt.Figure()   #day_out
+        self.canvas3 = FigureCanvas(self.fig3)
+        self.fig4 = plt.Figure()   #hour_out
+        self.canvas4 = FigureCanvas(self.fig4)
+
+        self.layout_day_in.addWidget(self.canvas)
+        self.layout_hour_in.addWidget(self.canvas2)
+
+        self.layout_day_out.addWidget(self.canvas3)
+        self.layout_hour_out.addWidget(self.canvas4)
+
+        self.testdata_x = ['Sun', 'Mon', 'Tus', 'Wed', 'Thu', 'Fri', 'Sat']
+        self.testdata_y = [2, 7, 6, 8, 3, 3, 4]
 
         self.graph_draw()
 
     def graph_draw(self):   #test
-        x = np.arange(0, 100, 1)
-        y = np.sin(x)
+        #===day_in===
+        x = self.testdata_x
+        y = self.testdata_y
 
         ax = self.fig.add_subplot(111)
         ax.plot(x, y, label="sin")
         ax.set_xlabel("x")
         ax.set_xlabel("y")
-
-        ax.set_title("my sin graph")
+        ax.set_title("my test graph")
         ax.legend()
+        ax.set_ylim(0, 10)
         self.canvas.draw()
 
+        #===hour_in===
+        x2 = self.testdata_x
+        y2 = self.testdata_y
+
+        ax2 = self.fig2.add_subplot(111)
+        ax2.bar(x2, y2, label="test2")
+        # ax2.set_xlabel("hour")
+        # ax2.set_ylabel("car")
+        # ax2.set_title("hour in")
+        ax2.legend()
+        ax2.set_ylim(0, 10)
+        self.fig2.tight_layout()
+        self.fig2.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2)
+        self.canvas2.draw()
+
+
+        #===day_out===
         x3 = np.arange(0, 50, 1)
         y3 = np.sin(x3)
 
@@ -208,27 +243,46 @@ class TotalGraph(QDialog):
         ax3.legend()
         self.canvas3.draw()
 
+        #===hour_out===
+        x4 = self.testdata_x
+        y4 = self.testdata_y
+
+        ax4 = self.fig4.add_subplot(111)
+        ax4.bar(x4, y4, label="test24")
+        ax4.set_xlabel("hour")
+        ax4.set_ylabel("car")
+        ax4.set_title("hour out")
+        ax4.legend()
+        ax4.set_ylim(0, 10)
+        self.canvas4.draw()
+
     def closeEvent(self, event):
         #self.parent().show()
         #self.parent().move(self.pos())
         self.parent().remove_window_list(self.parent().graph_window)
+        self.parent().flag_open_graph = False
         super().closeEvent(event)
 
 
 class MapInfo(QDialog, BDConnector):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("GUI/Admin/map_info.ui", self)
+        loadUi("GUI/Admin/map_info.ui", self)   #change path
         self.setWindowTitle("Map")
         self.setFixedSize(720, 820)
 
         self.pixmap_map_image = QPixmap()
-        self.pixmap_map_image.load("GUI/Admin/park_map.png")
-        self.pixmap_map_image = self.pixmap_map_image.scaled(self.lb_map.width(), self.lb_map.height())
-        
-        self.lb_map.setPixmap(self.pixmap_map_image)
+
+        self.update_timer = QTimer(self)
+        self.update_timer.timeout.connect(self.update_timer_callback)
+        self.update_timer.start(3000)
+
         self.map_update()
+
+        self.count = 0
         #self.charging_area()
+
+        
 
         
 
@@ -244,6 +298,11 @@ class MapInfo(QDialog, BDConnector):
             query = "SELECT PK_NUM, CAR_NUM FROM CAR_INFO"
             cursor.execute(query)
             founds = cursor.fetchall()
+
+            self.pixmap_map_image.load("GUI/Admin/park_map.png")   #change path
+            self.pixmap_map_image = self.pixmap_map_image.scaled(self.lb_map.width(), self.lb_map.height())
+
+            self.lb_map.setPixmap(self.pixmap_map_image)
 
             if founds:
                 print("OK")
@@ -282,24 +341,31 @@ class MapInfo(QDialog, BDConnector):
 
     def charging_area(self, painter):   #충전 구역 표시
         c_points = [
-            QPoint(120, 50),
-            QPoint(18, 50),
-            QPoint(18, 320),
-            QPoint(120, 320)
+            QPoint(132, 64),
+            QPoint(30, 64),
+            QPoint(30, 325),
+            QPoint(132, 325)
         ]
 
         polygon = QPolygon(c_points)
         painter.setPen(QColor(0, 0, 0))
-        painter.setBrush(QColor(0, 0, 255, 127))  # 반투명 파란색
+        painter.setBrush(QColor(0, 0, 255, 100))  # 반투명 파란색
         painter.drawPolygon(polygon)
-        
 
+
+    def update_timer_callback(self):
+        self.map_update()
+        
+        print("update complete: ", self.count)
+        self.count += 1
         
 
     def closeEvent(self, event):
         #self.parent().show()
         #self.parent().move(self.pos())
         self.parent().remove_window_list(self.parent().map_window)
+        self.parent().flag_open_map = False
+        self.update_timer.stop()
         super().closeEvent(event)
 
 if __name__ == "__main__":
@@ -310,28 +376,5 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
 
 
-# self.fig_week_in = plt.Figure()
-#         self.canvas_week_in = FigureCanvas(self.fig_week_in)
-#         self.fig_hour_in = plt.Figure()
-#         self.canvas_hour_in = FigureCanvas(self.fig_hour_in)
-
-#         self.fig_week_out = plt.Figure()
-#         self.canvas_week_out = FigureCanvas(self.fig_week_out)
-#         self.fig_hour_out = plt.Figure()
-#         self.canvas_hour_out = FigureCanvas(self.fig_hour_out)
-
-
-#         self.fig = plt.Figure()
-#         self.canvas = FigureCanvas(self.fig)
-#         self.fig3 = plt.Figure()
-#         self.canvas3 = FigureCanvas(self.fig3)
-
-#         self.layout_week_in.addWidget(self.canvas_week_in)
-#         self.layout_hour_in.addWidget(self.canvas_hour_in)
-
-#         self.layout_week_out.addWidget(self.canvas_week_out)
-#         self.layout_hour_out.addWidget(self.canvas_hour_out)
-
-# layout name: layout_week_in, layout_week_out, layout_hour_in, layout_hour_out
 
         
