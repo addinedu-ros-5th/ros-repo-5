@@ -34,16 +34,18 @@ def update_database(data):
                         if in_time and not out_time:
                             # Check if the new OUT_TIME is at least 2 minutes after IN_TIME
                             if timestamp - in_time >= timedelta(minutes=2):
-                                cursor.execute("UPDATE CAR_INFO SET OUT_TIME = %s WHERE CAR_NUM = %s", (timestamp, plate))
+                                cursor.execute("UPDATE CAR_INFO SET OUT_TIME = %s AND PK_NUM = %s WHERE CAR_NUM = %s", (timestamp, "O1", plate))
+                                
                         else:
                             # Insert new record only if the time difference is at least 2 minutes
                             if in_time and timestamp - in_time >= timedelta(minutes=2):
-                                cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME) VALUES (%s, %s)", (plate, timestamp))
+                                cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME, PK_NUM) VALUES (%s, %s, %s)", (plate, timestamp, "I1"))
                             elif not in_time:
-                                cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME) VALUES (%s, %s)", (plate, timestamp))
+                                cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME, PK_NUM) VALUES (%s, %s, %s)", (plate, timestamp, "I1"))
                     else:
                         # No existing record, just insert the new record
-                        cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME) VALUES (%s, %s)", (plate, timestamp))
+                        cursor.execute("INSERT INTO CAR_INFO (CAR_NUM, IN_TIME, PK_NUM) VALUES (%s, %s, %s)", (plate, timestamp, "I1"))
+                        
         
         connection.commit()
         print("Data has been updated successfully.")
