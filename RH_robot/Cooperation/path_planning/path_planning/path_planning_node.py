@@ -165,9 +165,30 @@ class WaypointNavigator(Node):
             self.navigation_active = False
 
             # 현재 경로에 따라 후속 작업 처리
-            if self.current_route in ['RA2TG1', 'RB2TG1', 'RA2TG2', 'RB2TG2']:
+            if self.current_route in ['RA2TG1', 'RA2TG2']:
                 if not self.post_action_performed:
-                    self.perform_post_navigation_action()
+                    self.perform_post_navigation_action_left()
+            elif self.current_route in ['RB2TG1', 'RB2TG2']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_right()
+            elif self.current_route in ['RG1TF1', 'RG2TF1']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_left()
+            elif self.current_route in ['RG1TF2', 'RG2TF2']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_left2()
+            elif self.current_route in ['RI1TA2','RI1TB2', 'RI1TE2']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_right_180()
+            elif self.current_route in ['RF1TO1', 'RF2TO1']:
+                if not self.post_action_performed:
+                    self.perform_post_navigastion_action_right2()
+            elif self.current_route in ['GF1TO1', 'GF2TO1']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_rotation_right_90()
+            elif self.current_route in ['RI1TE2', '매복 출차']:
+                if not self.post_action_performed:
+                    self.perform_post_navigation_action_rotation_second_park()
             elif self.current_route in self.gogo_signal_to_park_num:
                 if not self.tg1_published:
                     park_num_signal = self.gogo_signal_to_park_num[self.current_route]
@@ -210,10 +231,10 @@ class WaypointNavigator(Node):
                 cmd.linear.x = self.linear_pid.compute(distance, 0, dt)
             self.publisher_.publish(cmd)
 
-    def perform_post_navigation_action(self):
+    def perform_post_navigation_action_left(self):
         # 제자리 회전 및 후진
         self.get_logger().info('Performing post-navigation rotation and backward movement')
-        self.rotate_for_time(2.1)  # 90도 회전
+        self.rotate_for_time_left(2.1)  # 90도 회전
         rclpy.spin_once(self, timeout_sec=2)
         self.move_backward_for_time(5)  # 5초간 후진
         self.get_logger().info('Post-navigation action completed')
@@ -222,11 +243,118 @@ class WaypointNavigator(Node):
         # 노드 재시작
         self.restart_node()
 
-    def rotate_for_time(self, angle):
+    def perform_post_navigation_action_right(self):
+        self.get_logger().info('Performing post-navigation rotation and backward movement')
+        self.rotate_for_time_right(2.1)  # 90도 회전
+        rclpy.spin_once(self, timeout_sec=2)
+        self.move_backward_for_time(5)  # 5초간 후진
+        self.get_logger().info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        # 노드 재시작
+        self.restart_node() 
+
+    def perform_post_navigation_action_right_180(self):
+        self.get_logger().info('Performing post-navigation rotation and backward movement')
+        self.rotate_for_time_right(4.2)  # 90도 회전
+        rclpy.spin_once(self, timeout_sec=2)
+        self.get_logger().info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        # 노드 재시작
+        self.restart_node() 
+
+    # 제자리 90도 왼쪽 회전
+    def perform_post_navigation_action_left2(self):
+        self.get_logger().info('Performing post-navigation rotation')
+        self.rotate_for_time_left(2.1)
+        rclpy.spin_once(self, timeout_sec=2)
+        self.get_logger().info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        self.restart_node()
+
+    def perform_post_navigastion_action_right2(self):
+        self.get_logger().info('Performing post-navigation rotation')
+        self.rotate_for_time_right(2.1)
+        rclpy.spin_once(self, timeout_sec=2)
+        self.get_logger().info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        self.restart_node()
+    
+    # 우회전 
+    def perform_post_navigation_action_rotation_right_90(self):
+        self.get_logger().info('Performing post-navigation rotation right')
+        self.rotate_for_right(2.1)
+        rclpy.spin_once(self, timeout_sec=2)
+        self.get_logger.info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        self.restart_node()
+    
+    # 이중 주차 함수
+    def perform_post_navigation_action_rotation_second_park(self):
+        self.get_logger().info('Performing post-navigation rotation second park')
+        self.rotate_for_curve(1)
+        self.rotate_for_curve2(1)
+        rclpy.spin_once(self, timout_sec=2)
+        self.rotate_for_curve3(1)
+        self.rotate_for_curve4(1)
+        self.get_logger().info('Post-navigation action completed')
+        self.post_action_performed = True
+        self.reset_state()
+        self.restart_node()
+
+    def rotate_for_time_left(self, angle):
         cmd = Twist()
         cmd.angular.z = 0.5  # 적절한 회전 속도로 설정
         duration = angle / 0.5
         self.publish_command_for_duration(cmd, duration)
+    
+    def rotate_for_time_right(self, angle):
+        cmd = Twist()
+        cmd.angular.z = -0.5
+        duration = angle / 0.5
+        self.publish_command_for_duration(cmd, duration)
+
+    # 우회전 함수
+    def rotate_for_right(self, duration):
+        cmd = Twist()
+        cmd.linear.x = 0.1  # 직진 속도 설정 (양수는 전진, 음수는 후진)
+        cmd.angular.z = -0.2  # 각속도 설정 (음수는 우회전, 양수는 좌회전)
+        self.publish_command_for_duration(cmd, duration)
+            
+    # 이중 주차 곡선 함수 (주차)
+    def rotate_for_curve(self, duration):
+        cmd = Twist()
+        cmd.linear.x = -0.1
+        cmd.angular.z = 0.2
+        self.publish_command_for_duration(cmd, duration) 
+    def rotate_for_curve2(self, duration):
+        cmd = Twist()
+        cmd.linear.x = -0.1
+        cmd.angular.z = -0.2
+        self.publish_command_for_duration(cmd, duration)
+
+    # 이중 주차 곡선 함수 (출차)
+    def rotate_for_curve3(self, duration):
+        cmd = Twist()
+        cmd.linear.x = 0.1
+        cmd.angular.z = -0.2
+        self.publish_command_for_duration(cmd, duration)
+    def rotate_for_curve4(self, duration):
+        cmd = Twist()
+        cmd.linear.x = 0.1
+        cmd.angular.z = 0.2
+        self.publish_command_for_duration(cmd, duration)
+
+
+    # def rotate_for_time_right_180(self, angle):
+    #     cmd = Twist()
+    #     cmd.angular.z = -0.5
+    #     duration = angle / 0.5
+    #     self.publish_command_for_duration_180(cmd, duration)
 
     def move_backward_for_time(self, time):
         cmd = Twist()
@@ -239,6 +367,13 @@ class WaypointNavigator(Node):
             self.publisher_.publish(cmd)
             rclpy.spin_once(self, timeout_sec=0.1)
         self.publisher_.publish(Twist())  # 멈춤 명령 발행
+
+    # def publish_command_for_duration_180(self, cmd, duration):
+    #     start_time = self.get_clock().now()
+    #     while (self.get_clock().now() - start_time).nanoseconds / 2e9 < duration:
+    #         self.publisher_.publish(cmd)
+    #         rclpy.spin_once(self, timeout_sec=0.1)
+    #     self.publisher_.publish(Twist())
 
     def reset_state(self):
         self.reached_waypoint = False
@@ -268,7 +403,7 @@ class WaypointNavigator(Node):
         self.reset_state()
         subprocess.Popen(['ros2', 'run', 'path_planning', 'path_planning_node'])
         return response
-
+    
 def main(args=None):
     rclpy.init(args=args)
     node = WaypointNavigator()
