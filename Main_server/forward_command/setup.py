@@ -21,6 +21,7 @@ setup(
         'console_scripts': [
             'forward_node = forward_command.forward_node:main',
             'waypoint_follower = forward_command.waypoint_follower:main',
+            'task = forward_command.task:main',
         ],
     },
 )

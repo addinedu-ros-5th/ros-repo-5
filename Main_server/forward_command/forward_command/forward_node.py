@@ -135,7 +135,7 @@ class WaypointNavigator(Node):
                     self.tg1_published = True  # 한 번만 발행되도록 설정
             return
 
-        self.get_logger().info('Navigating to waypoint')
+        # self.get_logger().info('Navigating to waypoint')
         goal = self.current_waypoints[self.current_waypoint_index]
         goal_x, goal_y = goal['x'], goal['y']
         current_pose = self.get_current_pose()
@@ -198,9 +198,9 @@ class WaypointNavigator(Node):
         while (self.get_clock().now() - start_time).nanoseconds / 1e9 < duration:
             self.publisher_.publish(cmd)
             rclpy.spin_once(self, timeout_sec=0.1)
-            self.get_logger().info('stop0')
+            # self.get_logger().info('stop0')
         self.publisher_.publish(Twist())  # 멈춤 명령 발행
-        self.get_logger().info('stop1')
+        # self.get_logger().info('stop1')
 
     def get_yaw_from_quaternion(self, orientation):
         siny_cosp = 2 * (orientation.w * orientation.z + orientation.x * orientation.y)
