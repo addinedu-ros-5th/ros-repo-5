@@ -1,0 +1,60 @@
+name: drobot_bridge
+
+topics:
+  send_park_num:
+    type: std_msgs/msg/String
+    from_domain: 23
+    to_domain: 76
+  send_park_num:
+    type: std_msgs/msg/String
+    from_domain: 10
+    to_domain: 76
+  send_park_num:
+    type: std_msgs/msg/String
+    from_domain: 10
+    to_domain: 200
+  
+  send_park_num_23:
+    type: std_msgs/msg/String
+    from_domain: 76
+    to_domain: 23
+  send_park_num_10:
+    type: std_msgs/msg/String
+    from_domain: 76
+    to_domain: 10
+  send_park_num_59:
+    type: std_msgs/msg/String
+    from_domain: 76
+    to_domain: 59
+
+  amcl_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    from_domain: 23
+    to_domain: 76
+    remap: amcl_pose_23
+  amcl_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    from_domain: 10
+    to_domain: 76
+    remap: amcl_pose_10
+  amcl_pose:
+    type: geometry_msgs/msg/PoseWithCovarianceStamped
+    from_domain: 59
+    to_domain: 76
+    remap: amcl_pose_59
+
+  robot_status:
+    type: std_msgs/msg/String
+    from_domain: 23
+    to_domain: 76
+    remap: robot_status_23
+  robot_status:
+    type: std_msgs/msg/String
+    from_domain: 10
+    to_domain: 76
+    remap: robot_status_10
+  robot_status:
+    type: std_msgs/msg/String
+    from_domain: 59
+    to_domain: 76
+    remap: robot_status_59
