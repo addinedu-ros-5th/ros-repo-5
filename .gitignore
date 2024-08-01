@@ -26,7 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 GUI/Admin/DB_set.py
-Main_server/final_project_gui_package/final_project_gui_package/DB_set.py
+Main_server/server_and_gui_package/server_and_gui_package/DB_set.py
 DB_SET.py
 config.h
 
