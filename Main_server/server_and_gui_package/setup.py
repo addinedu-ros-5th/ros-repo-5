@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'final_project_gui_package'
+package_name = 'server_and_gui_package'
 
 setup(
     name=package_name,
@@ -20,11 +20,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'gui_test_node = final_project_gui_package.gui_test_node:main',
-            "send_park_num_test = final_project_gui_package.send_park_num_test:main",
-            "server_and_user = final_project_gui_package.server_and_user:main",
-            "out_signal_pre = final_project_gui_package.out_signal_pre:main",
-            "in_park_area = final_project_gui_package.in_park_area:main"
+            'my_first_node = server_and_gui_package.my_first_node:main',
+            "server_and_user = server_and_gui_package.server_and_user:main",
+            "come_in_park_area = server_and_gui_package.come_in_park_area:main",
+            "server_and_park = server_and_gui_package.server_and_park:main"
         ],
     },
 )

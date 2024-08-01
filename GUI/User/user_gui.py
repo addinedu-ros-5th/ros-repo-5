@@ -74,8 +74,6 @@ class WindowClass(QMainWindow, from_class) :
         self.table_ready.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_ready.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
-        self.pbt_test.clicked.connect(lambda: self.back_page_input_num(9))   #move page:test
-
         #===stack1:page_check===
         self.pbt_check_cancle.clicked.connect(lambda: self.back_page_input_num(0))   #move page
         self.pbt_out_signal.clicked.connect(lambda: self.back_page_input_num(1))
@@ -186,14 +184,12 @@ class WindowClass(QMainWindow, from_class) :
             self.stk_user.setCurrentIndex(0)
             self.car_num_data = []
             print("back select")
-
-        elif status == 9:   #test
-            send_text = "S" + "test"
-            self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal2->0
             
 
     #===stk2 function===
     def select_to_check(self, row, column):
+        self.table_select_car.clearSelection()
+        self.table_select_car.setFocus()
         self.selected_num = self.table_select_car.item(row, column).text()
         print(f"ROW {row} clicked: {self.selected_num}")
         send_text = "D" + self.selected_num

@@ -4,7 +4,7 @@ from std_msgs.msg import String
 
 import mysql.connector
 from mysql.connector import Error
-from final_project_gui_package.DB_set import DB_SET
+from server_and_gui_package.DB_set import DB_SET
 
 import re
 
@@ -35,7 +35,7 @@ class BDConnector:
 
 class In_Park_Area(Node, BDConnector):
     def __init__(self):
-        Node.__init__(self, 'test_in_car')
+        Node.__init__(self, 'come_in_park_area_node')
         BDConnector.__init__(self)
 
         if self.connect_to_database():
