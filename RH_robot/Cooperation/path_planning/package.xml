@@ -4,7 +4,7 @@
   <name>path_planning</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="john@todo.todo">john</maintainer>
+  <maintainer email="yohangim119@gmail.com">ros2</maintainer>
   <license>TODO: License declaration</license>
   
   <buildtool_depend>ament_cmake</buildtool_depend>
