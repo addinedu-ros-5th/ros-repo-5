@@ -17,7 +17,7 @@ def connect_to_wifi(ssid, password):
 class CheckPublisher(Node):
     def __init__(self):
         super().__init__('check_park_publisher')
-        self.plate_publisher = self.create_publisher(String, 'check_park_topic', 10)
+        self.plate_publisher = self.create_publisher(String, 'check_park', 10)
         self.get_logger().info('CheckPublisher node has been started.')
 
     def publish_index(self, index_value):
@@ -50,7 +50,7 @@ def handle_client(client_socket, publisher):
 
 def start_server(publisher):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', 8080))
+    server.bind(('192.168.2.61', 8080)) #server ip
     server.listen(5)
     print("Server started on port 8080")
     while True:
@@ -59,9 +59,10 @@ def start_server(publisher):
         client_handler = threading.Thread(target=handle_client, args=(client, publisher))
         client_handler.start()
 
+# 변경 해야 한다.
 def main():
-    ssid = "ros2final5"
-    password = "00000000"
+    ssid = "addinedu_class_1(2.4G)"
+    password = "addinedu1"
 
     try:
         connect_to_wifi(ssid, password)

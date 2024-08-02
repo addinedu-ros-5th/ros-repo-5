@@ -7,11 +7,11 @@ class CheckSubscriber(Node):
         super().__init__('check_park_subscriber')
         self.plate_subscription = self.create_subscription(
             String,
-            'check_park_topic',  # Use the correct topic name
+            'check_park',  # Use the correct topic name
             self.plate_listener_callback,
             10
         )
-        self.get_logger().info('Subscribed to check_park_topic')
+        self.get_logger().info('Subscribed to check_park')
 
     def plate_listener_callback(self, msg):
         plate_number = msg.data
