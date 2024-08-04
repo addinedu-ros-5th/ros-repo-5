@@ -12,3 +12,8 @@ For detailed instructions and a step-by-step guide on using the car plate detect
 
 - [Car Plate Detection Manual](https://studyhoons.tistory.com/24)
 
+
+### ROS - rqt_graph
+
+
+![image](https://github.com/user-attachments/assets/7ae3c912-164a-48bf-a2e4-83515684fbb9)
