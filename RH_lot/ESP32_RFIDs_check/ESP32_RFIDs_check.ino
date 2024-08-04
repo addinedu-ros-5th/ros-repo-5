@@ -14,10 +14,19 @@ Config config;
 // RFID 2
 #define SS_PIN2 26    // SDA(SS) - GPIO26
 #define RST_PIN2 13   // RST - GPIO21
+
+// LED
 #define BUILTIN_LED_PIN 2 // BUILTIN_LED_PIN
+
+
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // MFRC522 RFID module
 MFRC522 mfrc522_2(SS_PIN2, RST_PIN2);   // MFRC522 RFID module
 WiFiClient client;
+
+// 통신 테스트를 위한 변수 추가
+unsigned long lastSendTime = 0;
+const unsigned long sendInterval = 5000; // 5초마다 메시지 전송
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
@@ -40,12 +49,27 @@ void setup() {
   SPI.setFrequency(4000000); // SPI Clock : 4MHz
   pinMode(BUILTIN_LED_PIN, OUTPUT);
   Serial.println("Ready to scan RFID tags...");
+  
+  // 통신 테스트 준비 메시지 추가
+  Serial.println("Also ready for communication test...");
 }
+
 void loop() {
+  // 기존 RFID 체크 코드
   checkRFID(mfrc522);
   checkRFID(mfrc522_2);
-  delay(500);
+  
+  // 통신 테스트 코드 추가
+  unsigned long currentTime = millis();
+  if (currentTime - lastSendTime >= sendInterval) {
+    sendTestMessage();
+    lastSendTime = currentTime;
+  }
+  checkServerResponse();
+  
+  delay(100);
 }
+
 void checkRFID(MFRC522 &rfid) {
     if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
         Serial.println("Card detected!");
@@ -89,6 +113,7 @@ void checkRFID(MFRC522 &rfid) {
         rfid.PCD_StopCrypto1();
     }
 }
+
 void sendToServer(String message) {
   if (client.connect(config.tcp_server, config.tcp_port)) {
     Serial.println("Connected to server");
@@ -98,5 +123,27 @@ void sendToServer(String message) {
     Serial.println("Disconnected from server");
   } else {
     Serial.println("Connection to server failed");
+  }
+}
+
+// 통신 테스트를 위한 함수 추가
+void sendTestMessage() {
+  if (client.connect(config.tcp_server, config.tcp_port)) {
+    Serial.println("Test: Connected to server");
+    String message = "Test message from ESP32: " + String(millis());
+    client.println(message);
+    Serial.println("Test: Message sent: " + message);
+  } else {
+    Serial.println("Test: Connection to server failed");
+  }
+}
+
+// 서버 응답 확인을 위한 함수 추가
+void checkServerResponse() {
+  if (client.available()) {
+    String response = client.readStringUntil('\n');
+    Serial.println("Test: Received from server: " + response);
+    client.stop();
+    Serial.println("Test: Disconnected from server");
   }
 }
