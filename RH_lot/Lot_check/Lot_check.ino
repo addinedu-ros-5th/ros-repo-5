@@ -51,7 +51,7 @@ void setup() {
   Serial.println("Ready to scan RFID tags...");
   
   // 통신 테스트 준비 메시지 추가
-  Serial.println("Also ready for communication test...");
+  // Serial.println("Also ready for communication test...");
 }
 
 void loop() {
@@ -60,14 +60,14 @@ void loop() {
   checkRFID(mfrc522_2);
   
   // 통신 테스트 코드 추가
-  unsigned long currentTime = millis();
-  if (currentTime - lastSendTime >= sendInterval) {
-    sendTestMessage();
-    lastSendTime = currentTime;
-  }
-  checkServerResponse();
+  // unsigned long currentTime = millis();
+  // if (currentTime - lastSendTime >= sendInterval) {
+  //   sendTestMessage();
+  //   lastSendTime = currentTime;
+  // }
+  // checkServerResponse();
   
-  delay(100);
+  // delay(100);
 }
 
 void checkRFID(MFRC522 &rfid) {
