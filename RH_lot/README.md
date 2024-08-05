@@ -1,3 +1,19 @@
+# Lot_check 
+
+## manual
+
+- before RFID tag 
+![image](https://github.com/user-attachments/assets/c06d68d5-f87c-44b5-bf57-b8bd13bd174e)
+
+- after RFID tag
+![image](https://github.com/user-attachments/assets/a4d3043b-28ca-49ee-aba3-13e724595f43)
+
+
+### Output signal : PXX000 (XX : parking area) - parking complete!
+
+
+***
+
 ## error: ordered comparison of pointer with integer zero ('byte' {aka 'unsigned char'} and 'int')
 
 ```
