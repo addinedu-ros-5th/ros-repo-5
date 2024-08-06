@@ -32,11 +32,19 @@ void loop() {
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n');
     input.trim();
-    currentParkNum = input.toInt();
-    rfidReady = true;
-    digitalWrite(LED_PIN, HIGH);
-    Serial.println("STATUS:Received index: " + String(currentParkNum));
-    Serial.println("STATUS:RFID recognition ready. Give me your card.");
+
+    if (input == "toggle_solenoid") {
+      solenoidState = !solenoidState;
+      digitalWrite(SOLENOID, solenoidState ? HIGH : LOW);
+      Serial.println(solenoidState ? "STATUS:Solenoid ON" : "STATUS:Solenoid OFF");
+    } else {
+      currentParkNum = input.toInt();
+      rfidReady = true;
+      digitalWrite(LED_PIN, HIGH);
+      Serial.println("STATUS:Received index: " + String(currentParkNum));
+      Serial.println("STATUS:RFID recognition ready. Give me your card.");
+      sendStatus(); // Send initial status
+    }
   }
 
   // Only check for the card if RFID recognition is ready
@@ -77,8 +85,18 @@ void loop() {
     digitalWrite(LED_PIN, LOW);
     rfidReady = false;
     
+    sendStatus(); // Send status after processing RFID
+
     // Halt PICC and stop encryption on PCD
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
+}
+
+void sendStatus() {
+  String ledState = digitalRead(LED_PIN) == HIGH ? "true" : "false";
+  String solenoidStateStr = solenoidState ? "true" : "false";
+  String rfidReadyStr = rfidReady ? "true" : "false";
+  
+  Serial.println("STATUS:LEDState=" + ledState + ",solenoidState=" + solenoidStateStr + ",rfidReady=" + rfidReadyStr);
 }
