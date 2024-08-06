@@ -11,6 +11,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 import uuid
 
+from datetime import datetime
 
 from_class = uic.loadUiType("GUI/User/user_gui.ui")[0]   #change path
 
@@ -77,6 +78,8 @@ class WindowClass(QMainWindow, from_class) :
         #===stack1:page_check===
         self.pbt_check_cancle.clicked.connect(lambda: self.back_page_input_num(0))   #move page
         self.pbt_out_signal.clicked.connect(lambda: self.back_page_input_num(1))
+
+        self.in_time_info = ""
 
         
         #===stack2:page_select===
@@ -200,22 +203,44 @@ class WindowClass(QMainWindow, from_class) :
     #===stkxxx===
     def receive_ros2_data(self, msg):   #server:full car num -> gui
         print("data check: ", msg)
+        
         if msg[0] == "D" and msg[-1] != "R":
-            receive_car_num = msg[1:]
-            self.car_num_data.append(receive_car_num)
+            receive_data = msg[1:]
+            find_t = receive_data.find("T")
+            if find_t == -1:   #no T   #2 more
+                self.car_num_data.append(receive_data)
 
-            if len(self.car_num_data) == 1:
+
+                if len(self.car_num_data) >= 2:
+                    print("select: ", self.car_num_data)
+                    self.timer_stk02.start(500)
+                    self.table_select_car.setRowCount(len(self.car_num_data))
+                    self.table_select_car.setColumnCount(1)
+                    for row_idx, num_data in enumerate(self.car_num_data):
+                        self.table_select_car.setItem(row_idx, 0, QTableWidgetItem(num_data))
+            else:   #T one
+                self.car_num_data = []
+                receive_car_num = receive_data[:find_t]
+                self.in_time_info = receive_data[find_t+1:]
+                print(receive_car_num, " + " , self.in_time_info)
+
+                self.car_num_data.append(receive_car_num)
+
                 self.timer_stk01.start(500)
                 self.selected_num = self.car_num_data[0]
                 print("select: ", self.selected_num)
+                self.lb_in_time.setText(self.in_time_info)
 
-            elif len(self.car_num_data) >= 2:
-                print("select: ", self.car_num_data)
-                self.timer_stk02.start(500)
-                self.table_select_car.setRowCount(len(self.car_num_data))
-                self.table_select_car.setColumnCount(1)
-                for row_idx, num_data in enumerate(self.car_num_data):
-                    self.table_select_car.setItem(row_idx, 0, QTableWidgetItem(num_data))
+                cur_time = datetime.now().strftime("%m/%d %H:%M")
+                self.lb_out_time.setText(cur_time)
+
+                if len(self.car_waiting_list) == 0:
+                    spend_time = 2
+                else:
+                    spend_time = len(self.car_waiting_list) * 3
+
+                self.lb_spend.setText(f"약 {spend_time}분 정도가 소요됩니다.")
+
 
         elif msg[0] == "D" and msg[-1] == "R":   #table_waiting -> table_ready
             ready_com_data = msg[1:-1]

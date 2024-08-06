@@ -380,7 +380,7 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="text">
-      <string>출차 시각:</string>
+      <string>출차시각:</string>
      </property>
     </widget>
     <widget class="QLabel" name="lb_in_time">
@@ -399,7 +399,7 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="text">
-      <string>입차된 시각 표시</string>
+      <string>240729. 14:05:32</string>
      </property>
     </widget>
     <widget class="QLabel" name="lb_out_time">
@@ -418,7 +418,7 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="text">
-      <string>주차된 시간 표시</string>
+      <string>240729. 14:07:54</string>
      </property>
     </widget>
     <widget class="QLabel" name="lb_spend">
@@ -437,7 +437,7 @@
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="text">
-      <string>예상 소요 시간을 넣을 곳</string>
+      <string>약 3분 정도가 소요됩니다.</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pbt_out_signal">
