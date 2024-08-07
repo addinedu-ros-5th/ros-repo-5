@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String, Int32
 import serial
+from config import Config
 
 class ArduinoBridge(Node):
     def __init__(self):
@@ -17,7 +18,7 @@ class ArduinoBridge(Node):
         
         self.subscription_check_park = self.create_subscription(
             String,
-            '/check_park_23',  # ROBOT ID (_23)
+            '/check_park_23',  # ROBOT ID
             self.check_park_callback,
             10)
         
@@ -55,30 +56,40 @@ class ArduinoBridge(Node):
         send_park_num = msg.data
         self.get_logger().info(f'Received park number: {send_park_num}')
         
-        park_num_prefix = send_park_num[:3]
-        index = self.park_num_to_index.get(park_num_prefix, 0)
+        # Ensure the park number has the expected format
+        if len(send_park_num) >= 3:
+            park_num_prefix = send_park_num[:3]
+            index = self.park_num_to_index.get(park_num_prefix, 0)  # Add default value of 0
         
-        if index != 0:
-            self.received_park_nums[park_num_prefix] = send_park_num
-            try:
-                self.ser.write(f'{index}\n'.encode())
-                self.get_logger().info(f'Written index {index} for park number prefix {park_num_prefix} to serial port')
-            except serial.SerialException as e:
-                self.get_logger().error(f'Failed to write to serial port: {e}')
+            if index != 0:
+                self.received_park_nums[park_num_prefix] = send_park_num
+                try:
+                    self.ser.write(f'{index}\n'.encode())
+                    self.get_logger().info(f'Written index {index} for park number prefix {park_num_prefix} to serial port')
+                except serial.SerialException as e:
+                    self.get_logger().error(f'Failed to write to serial port: {e}')
+            else:
+                self.get_logger().error(f'Invalid park number prefix: {park_num_prefix}')
         else:
-            self.get_logger().error(f'Invalid park number prefix')
+            self.get_logger().error(f'Received park number is too short: {send_park_num}')
 
     def check_park_callback(self, msg):
         check_park_num = msg.data
         self.check_park_received = True  # Set the flag when check_park message is received
         park_num_prefix = check_park_num[:3]
+    
         if park_num_prefix in self.check_park_index:
-            if self.dock_status == 1:
+            target_uid = Config.get_target_uid(check_park_num)  # Get target UID based on the entire park number
+            self.get_logger().info(f"Target UID for {check_park_num}: {target_uid}")
+
+            # Send solenoid toggle command only if dock_status is 1 and the target UID is matched
+            if self.dock_status == 1 and check_park_num == target_uid['name']:
                 try:
                     self.ser.write(b'toggle_solenoid\n')
                     self.get_logger().info('Sent solenoid toggle command')
                 except serial.SerialException as e:
                     self.get_logger().error(f'Failed to write to serial port: {e}')
+
         
     def read_from_arduino(self):
         if self.ser.in_waiting:
