@@ -17,7 +17,7 @@ class ArduinoBridge(Node):
         
         self.subscription_check_park = self.create_subscription(
             String,
-            '/check_park',
+            '/check_park_23',  # ROBOT ID (_23)
             self.check_park_callback,
             10)
         
@@ -35,9 +35,14 @@ class ArduinoBridge(Node):
             'HF1': 5, 'HO1': 6, 'HI1': 7
         }
         
+        self.check_park_index = {
+            'PA2', 'PB2', 'PE2', 'PG1',
+            'PF1', 'PI1', 'PO1'
+        }
+        
         self.received_park_nums = {}
         self.dock_status = 0
-        self.additional_condition = False
+        self.check_park_received = False  # Flag to ensure check_park message is received
 
         self.create_timer(0.1, self.read_from_arduino)
     
@@ -65,22 +70,25 @@ class ArduinoBridge(Node):
 
     def check_park_callback(self, msg):
         check_park_num = msg.data
-        if self.dock_status == 1 and check_park_num.startswith('P'):
-            try:
-                self.ser.write(b'toggle_solenoid\n')
-                self.get_logger().info('Sent solenoid toggle command')
-            except serial.SerialException as e:
-                self.get_logger().error(f'Failed to write to serial port: {e}')
+        self.check_park_received = True  # Set the flag when check_park message is received
+        park_num_prefix = check_park_num[:3]
+        if park_num_prefix in self.check_park_index:
+            if self.dock_status == 1:
+                try:
+                    self.ser.write(b'toggle_solenoid\n')
+                    self.get_logger().info('Sent solenoid toggle command')
+                except serial.SerialException as e:
+                    self.get_logger().error(f'Failed to write to serial port: {e}')
         
-        self.additional_condition = True  # Example setting
-
     def read_from_arduino(self):
         if self.ser.in_waiting:
             try:
                 line = self.ser.readline().decode('utf-8').strip()
                 if line.startswith("STATUS:"):
                     status_message = line[7:]  # Remove "STATUS:" prefix
-                    self.process_status_message(status_message)
+                    if status_message != "RFID recognition ready. Give me your card." and \
+                       status_message != "LEDState=true,solenoidState=true,rfidReady=true":
+                        self.process_status_message(status_message)
                 elif line.startswith("UID:"):
                     uid_message = f"Card UID: {line[4:]}"
                     self.get_logger().info(uid_message)
@@ -92,8 +100,12 @@ class ArduinoBridge(Node):
         self.get_logger().info(f"Received status: {status_message}")
         if status_message == "Solenoid ON":
             self.dock_status = 1
+            self.publish_dock_status()  # Publish dock status when it changes to 1
+            
         elif status_message == "Solenoid OFF":
             self.dock_status = 0
+            self.publish_dock_status()  # Publish dock status when it changes to 0
+
             # Publish a message to /robot_check with modified park number
             if self.received_park_nums:
                 prefix, original = next(iter(self.received_park_nums.items()))
@@ -103,7 +115,6 @@ class ArduinoBridge(Node):
                 self.publisher_robot_check.publish(msg)
                 self.get_logger().info(f'Published: {new_message}')
                 self.received_park_nums.clear()
-            self.publish_dock_status()
 
     def process_card_read(self):
         if self.received_park_nums:
@@ -116,20 +127,6 @@ class ArduinoBridge(Node):
             self.received_park_nums.clear()
             self.dock_status = 0
             self.publish_dock_status()
-
-    def publish_additional_message(self):
-        if self.dock_status == 1 and self.additional_condition:
-            msg = String()
-            msg.data = "Condition met: Dock status 1 and additional condition"
-            self.publisher_robot_check.publish(msg)
-            self.get_logger().info(f'Published additional message: {msg.data}')
-        elif self.dock_status == 0 and self.additional_condition:
-            msg = String()
-            msg.data = "Condition met: Dock status 0 and additional condition"
-            self.publisher_robot_check.publish(msg)
-            self.get_logger().info(f'Published additional message: {msg.data}')
-        self.dock_status = 0
-        self.publish_dock_status()
 
 def main(args=None):
     rclpy.init(args=args)

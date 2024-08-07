@@ -17,7 +17,7 @@ def connect_to_wifi(ssid, password):
 class CheckPublisher(Node):
     def __init__(self):
         super().__init__('check_park_publisher')
-        self.plate_publisher = self.create_publisher(String, 'check_park', 10)
+        self.plate_publisher = self.create_publisher(String, 'check_park_23', 10) # ROBOT ID (_23)
         self.get_logger().info('CheckPublisher node has been started.')
     
     def publish_index(self, index_value):
