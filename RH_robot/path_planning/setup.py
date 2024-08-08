@@ -13,7 +13,7 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='ros2',
+    maintainer='john',
     maintainer_email='yohangim119@gmail.com',
     description='TODO: Package description',
     license='TODO: License declaration',
@@ -21,6 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'path_planning_node = path_planning.path_planning_node:main',
+            'robot_check = path_planning.ROS_communicate:main',
+            'magnet_node = path_planning.magnet_node:main',
         ],
     },
 )

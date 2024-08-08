@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 from std_srvs.srv import Empty
+
 class PIDController:
     def __init__(self, kp, ki, kd):
         self.kp = kp
@@ -15,41 +16,36 @@ class PIDController:
         self.kd = kd
         self.prev_error = 0
         self.integral = 0
+
     def compute(self, setpoint, pv, dt):
         error = setpoint - pv
         self.integral += error * dt
         derivative = (error - self.prev_error) / dt
         self.prev_error = error
         return self.kp * error + self.ki * self.integral + self.kd * derivative
+
 class WaypointNavigator(Node):
     def __init__(self):
         super().__init__('path_planning_node')
 
-        # Subscription to receive waypoint signals
         self.subscription = self.create_subscription(
             String,
             '/send_park_num_23',
             self.listener_callback,
             10)
         
-        # Publisher for cmd_vel to control the robot
         self.publisher_ = self.create_publisher(Twist, '/base_controller/cmd_vel_unstamped', 10)
 
-        # Subscription to AMCL pose for robot localization
         self.amcl_subscription = self.create_subscription(
             PoseWithCovarianceStamped,
             '/amcl_pose',
             self.amcl_callback,
             10)
         
-        # Publisher to notify the server that the route is completed
         self.send_park_num_publisher = self.create_publisher(String, '/send_park_num', 10)
-
-        # Publisher for robot status
         self.robot_status_publisher = self.create_publisher(String, '/robot_status', 10)
-        self.amcl_pose = Pose()  # Initialize amcl_pose
+        self.amcl_pose = Pose()
         
-        # Load waypoints from JSON file
         self.waypoints_dict = self.load_waypoints()
         self.current_waypoints = []
         self.current_waypoint_index = 0
@@ -68,21 +64,23 @@ class WaypointNavigator(Node):
         self.srv = self.create_service(Empty, 'reset_node', self.reset_node_callback)
 
         self.gogo_signal_to_park_num = {
-            'GA2TG1': 'SA2TG1',
-            'GB2TG1': 'SB2TG1',
-            'RG1TF1': 'SG1TF1',
-            'RG1TO1': 'SG1TO1',
-            'RF1TO1': 'SF1TO1',
-            'GE2TA22': 'SE2TA2',
-            'RI1TB2': 'HI1000',
-            'GI1TB2': 'HB2000',
+            'RI1TB2': ['HI1TB2ON'],
+            'GI1TB2ON': ['SI1TB2', 'HB2TR1OFF'],
+            'RI1TE2': ['HI1TE2ON'],
+            'GI1TE2ON': ['SI1TE2', 'HE2TR1OFF'],
+            'RB2TG1': ['HB2TG1ON'],
+            'GB2TG1ON': ['SB2TG1'],
+            'RG1TF1': ['HF1TR1OFF'],
+            'RE2TA2': ['HE2TA2ON'],
+            'RA2TG1': ['HA2TG1ON'],
+            'GA2TG1ON': ['SA2TG1'],
+            'GE2TA22': ['HA2TR1OFF'],
+            'RG1TO1': ['SG1TO1', 'HO1TR1OFF']
         }
-        
-        # 작업 중인 상태로 설정할 신호 목록
-        self.busy_signals = ['RB2TG1', 'RI1TB2', 'RF1TO1', 'RA2TG1', 'RE2TA2']
 
-        # 작업 가능 상태로 설정할 신호 목록
-        self.available_signals = ['GG1TF1', 'GG1TO1', 'GF1TO1', 'GB2TR1']
+        
+        self.busy_signals = ['RI1TB2', 'RI1TE2', 'RB2TG1', 'RE2TA2', 'RA2TG1']
+        self.available_signals = ['GB2TR1OFF', 'GE2TR1OFF', 'GF1TR1OFF', 'GO1TR1OFF', 'GA2TR1OFF']
 
     def load_waypoints(self):
         waypoints_file = '/home/john/pinkbot/src/pinklab_minibot_robot/path_planning/path_planning/waypoints.json'
@@ -94,11 +92,11 @@ class WaypointNavigator(Node):
         waypoints = data['waypoints']
         routes = data['routes']
         return waypoints, routes
+
     def listener_callback(self, msg):
         self.get_logger().info(f'I heard: "{msg.data}"')
         data = msg.data
 
-        # Handle robot status changes based on signals
         if data in self.busy_signals:
             self.publish_robot_status('busy')
         elif data in self.available_signals:
@@ -128,75 +126,99 @@ class WaypointNavigator(Node):
         else:
             self.get_logger().info(f'Invalid route or signal: {data}')
 
+    def robot_check_callback(self, msg):
+        self.get_logger().info(f'Robot check received: "{msg.data}"')
+        # Receive the message from /robot_check and publish it to /send_park_num
+        self.publish_to_send_park_num(msg.data)
+
     def publish_robot_status(self, status):
         status_msg = String()
         status_msg.data = status
         self.robot_status_publisher.publish(status_msg)
         self.get_logger().info(f'Published robot status: {status}')
 
+    def publish_to_send_park_num(self, data):
+        park_num_msg = String()
+        park_num_msg.data = data
+        self.send_park_num_publisher.publish(park_num_msg)
+        self.get_logger().info(f'Published to /send_park_num: {data}')
+
     def amcl_callback(self, msg):
         self.amcl_pose = msg.pose.pose
+
     def get_current_pose(self):
         return self.amcl_pose
+
     def navigate_to_waypoints(self):
         if not self.navigation_active:
-            self.get_logger().info('HELLO')
             return
         
         if self.current_waypoint_index >= len(self.current_waypoints):
-            self.get_logger().info('All waypoints reached')
+            self.navigation_active = False
             
+            if self.current_route in ['Hello World!']:
+                self.get_logger().info('Hi')
 
-            # 현재 경로 출력
-            self.get_logger().info(f'Current route: {self.current_route}')
-            self.get_logger().info(f'Post action performed: {self.post_action_performed}')
-
-
-            # 현재 경로에 따라 후속 작업 처리
-            if self.current_route in ['RB2TG1', 'RG1TF1', 'GI1TB2']:
+            elif self.current_route in ['GI1TB2ON', 'RB2TG1', 'RG1TF1']:
                 if not self.post_action_performed:
-                    self.get_logger().info('Performing post action for RB2TG1, RG1TF1, GI1TB2')
+                    self.get_logger().info('Performing post action for GI1TB2ON, RB2TG1, RG1TF1')
+                    self.get_logger().info('돌아라')
                     self.perform_post_navigation_action_right()
+                    self.get_logger().info('좀')
                     self.post_action_performed = True
 
-            elif self.current_route in ['RA2TG1', 'GE2TA22']:
+            elif self.current_route in ['RA2TG1']:
                 if not self.post_action_performed:
-                    self.get_logger().info('Performing post action for RA2TG1, GE2TA22')
+                    self.get_logger().info('Performing post action for RA2TG1')
                     self.perform_post_navigation_action_left()
                     self.post_action_performed = True
+                    self.get_logger().info(f'Post action performed: {self.post_action_performed}')
 
-            elif self.current_route in ['GE2TA2']:
+            elif self.current_route in ['GA2TG1ON']:
                 if not self.post_action_performed:
-                    self.get_logger().info('Performing post action for GE2TA2')
+                    self.get_logger().info('Performing post action for GA2TG1ON')
+                    self.publish_task_completed1()
+                    self.post_action_performed = True
+                    self.get_logger().info(f'publish_task_completed1')
+
+            elif self.current_route in ['GE2TA22']:
+                if not self.post_action_performed:
+                    self.get_logger().info('Performing post action for GE2TA22')
+                    self.perform_post_navigation_action_left()
+                    self.post_action_performed = True
+                    self.get_logger().info(f'Post action performed: {self.post_action_performed}')
+
+            elif self.current_route in ['GE2TA2ON']:
+                if not self.post_action_performed:
+                    self.get_logger().info('Performing post action for GE2TA2ON')
                     self.perform_post_navigation_action_curve()
                     self.post_action_performed = True
 
-            elif self.current_route in ['RF1TO1', 'RE2TA2']:
+            elif self.current_route in ['GI1TE2ON', 'RE2TA2']:
                 if not self.post_action_performed:
-                    self.get_logger().info('Performing post action for RF1TO1, RE2TA2')
+                    self.get_logger().info('Performing post action for GI1TE2ON, RE2TA2')
                     self.perform_post_navigastion_action_right2()
                     self.post_action_performed = True
 
-            elif self.current_route in ['RI1TB2', 'GG1TO1', 'GG1TF1', 'GB2TR1']:
+            elif self.current_route in ['RI1TB2', 'GB2TR1OFF', 'RI1TE2', 'GE2TR1OFF', 'GF1TR1OFF', 'GA2TR1OFF', 'GO1TR1OFF']:
                 if not self.post_action_performed:
-                    self.get_logger().info('Performing post action for RI1TB2, GG1TO1, GG1TF1, GB2TR1')
+                    self.get_logger().info('Performing post action for RI1TB2, GB2TR1OFF, RI1TE2, GE2TR1OFF, GF1TR1OFF, GA2TR1OFF, GO1TR1OFF')
                     self.perform_post_navigation_action_right_180()
                     self.post_action_performed = True
 
-            elif self.current_route in self.gogo_signal_to_park_num:
+            # 모든 경우에서 gogo_signal_to_park_num에 따라 메시지 발행
+            if self.current_route in self.gogo_signal_to_park_num:
                 if not self.tg1_published:
-                    park_num_signal = self.gogo_signal_to_park_num[self.current_route]
-                    self.get_logger().info(f'Publishing {park_num_signal} to /send_park_num')
-                    msg = String()
-                    msg.data = park_num_signal
-                    self.send_park_num_publisher.publish(msg)
+                    park_num_signals = self.gogo_signal_to_park_num[self.current_route]
+                    for signal in park_num_signals:
+                        self.get_logger().info(f'Publishing {signal} to /send_park_num')
+                        msg = String()
+                        msg.data = signal
+                        self.send_park_num_publisher.publish(msg)
                     self.tg1_published = True
 
-            self.navigation_active = False
             return
 
-        
-        # Waypoint로 내비게이션
         goal = self.current_waypoints[self.current_waypoint_index]
         goal_x, goal_y = goal['x'], goal['y']
         current_pose = self.get_current_pose()
@@ -227,51 +249,51 @@ class WaypointNavigator(Node):
 
     def perform_post_navigation_action_curve(self):
         self.get_logger().info(f'Curve')
-        self.rotate_for_right(2)
-        rclpy.spin_once(self, timeout_sec=2)
-        self.get_logger().info(f'left')
-        self.rotate_for_time_left(4)
-        self.post_action_performed = True
-        self.reset_state()
-        self.restart_node()
+        self.rotate_for_time_left(3)
 
-    def perform_post_navigation_action_right(self):
-        self.rotate_for_time_right(2.1)  # 90도 회전
-        rclpy.spin_once(self, timeout_sec=2)
         self.move_backward_for_time(5)
         self.post_action_performed = True
         self.reset_state()
-        self.restart_node() 
+        self.publish_task_completed()
+
+    def publish_task_completed(self):
+        msg = String()
+        msg.data = 'task_completed'
+        self.send_park_num_publisher.publish(msg)  # Modify to publish on /send_park_num
+        self.get_logger().info('Published task_completed')
+
+    def publish_task_completed1(self):
+        msg = String()
+        msg.data = 'task_completed1'
+        self.send_park_num_publisher.publish(msg)  # Modify to publish on /send_park_num
+        self.get_logger().info('Published task_completed1')
+
+    def perform_post_navigation_action_right(self):
+        self.rotate_for_time_right(2.1)  # 90도 회전
+        self.get_logger().info('왜 안 돌아')
+        self.move_backward_for_time(5)
+        self.post_action_performed = True
+        self.reset_state()
 
     def perform_post_navigation_action_left(self):
         self.rotate_for_time_left(2.1)
-        rclpy.spin_once(self, timeout_sec=2)
+
         self.move_backward_for_time(7)
         self.post_action_performed = True
         self.reset_state()
-        self.restart_node()
+        self.get_logger().info(f'후속 완료2')
 
     def perform_post_navigation_action_right_180(self):
         self.rotate_for_time_right(5)  # 180도 회전
-        rclpy.spin_once(self, timeout_sec=2)
+
         self.post_action_performed = True
         self.reset_state()
-        self.restart_node() 
 
     def perform_post_navigastion_action_right2(self):
-        self.rotate_for_time_right(2.1)
-        rclpy.spin_once(self, timeout_sec=2)
-        self.post_action_performed = True
-        self.reset_state()
-        self.restart_node()
+        self.rotate_for_time_right(2.5)
 
-    # 우회전 
-    def perform_post_navigation_action_rotation_right_90(self):
-        self.rotate_for_right(2.1)
-        rclpy.spin_once(self, timeout_sec=2)
         self.post_action_performed = True
         self.reset_state()
-        self.restart_node()
 
     def rotate_for_time_left(self, angle):
         cmd = Twist()
@@ -285,11 +307,10 @@ class WaypointNavigator(Node):
         duration = angle / 0.5
         self.publish_command_for_duration(cmd, duration)
 
-    # 우회전 함수
     def rotate_for_right(self, duration):
         cmd = Twist()
         cmd.linear.x = 0.1
-        cmd.angular.z = -0.2  # 각속도 설정 (음수는 우회전, 양수는 좌회전)
+        cmd.angular.z = -0.2
         self.publish_command_for_duration(cmd, duration)
 
     def move_backward_for_time(self, time):
@@ -301,8 +322,7 @@ class WaypointNavigator(Node):
         start_time = self.get_clock().now()
         while (self.get_clock().now() - start_time).nanoseconds / 1e9 < duration:
             self.publisher_.publish(cmd)
-            rclpy.spin_once(self, timeout_sec=0.1)
-        self.publisher_.publish(Twist())  # 멈춤 명령 발행
+        self.publisher_.publish(Twist())
 
     def reset_state(self):
         self.reached_waypoint = False
@@ -311,12 +331,7 @@ class WaypointNavigator(Node):
         self.post_action_performed = False
         self.current_waypoints = []
         self.current_waypoint_index = 0
-        self.current_route = ""
-
-    def restart_node(self):
-        self.get_logger().info('Restarting node...')
-        subprocess.Popen(['ros2', 'run', 'path_planning', 'path_planning_node'])
-        self.get_logger().info('Node restart command issued')
+        self.get_logger().info(f'후속완료1 초기화 x')
 
     def get_yaw_from_quaternion(self, orientation):
         siny_cosp = 2 * (orientation.w * orientation.z + orientation.x * orientation.y)
@@ -327,11 +342,10 @@ class WaypointNavigator(Node):
         return math.atan2(math.sin(angle), math.cos(angle))
     
     def reset_node_callback(self, request, response):
-        self.get_logger().info('Received reset_node request. Restarting node...')
+        self.get_logger().info('Received reset_node request. Resetting state...')
         self.reset_state()
-        subprocess.Popen(['ros2', 'run', 'path_planning', 'path_planning_node'])
         return response
-    
+
 def main(args=None):
     rclpy.init(args=args)
     node = WaypointNavigator()
