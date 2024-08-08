@@ -88,11 +88,6 @@ class WindowClass(QMainWindow, from_class) :
         self.table_select_car.cellClicked.connect(self.select_to_check)
         self.table_ready.cellClicked.connect(self.send_car_out)
         self.pbt_select_cancle.clicked.connect(lambda: self.back_page_input_num(2))
-
-
-    # def update_test(self, msg):
-    #     self.lb_waiting.setText(msg)
-    #     print(msg)
         
 
     #===stk0 function===
@@ -109,10 +104,10 @@ class WindowClass(QMainWindow, from_class) :
         self.car_num_text = self.car_num_text[:-1]
         
         if self.car_num_text == "":
-            print("not data")
+            #print("not data")
             self.lb_input_carnum.clear()
         else:
-            print(self.car_num_text)
+            #print(self.car_num_text)
             self.lb_input_carnum.setText(self.car_num_text)
 
 
@@ -153,7 +148,7 @@ class WindowClass(QMainWindow, from_class) :
             self.selected_num = ""
             self.lb_carnum.clear()
             self.car_num_data = []
-            print("Reset")
+            #print("Reset")
 
         elif status == 1:   #stk1 -> 0:send out signal
             reply = QMessageBox.question(self, "check again", "정말 출차하시겠습니까?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -166,7 +161,7 @@ class WindowClass(QMainWindow, from_class) :
                     self.car_waiting_list.append(self.selected_num)
                     self.history_waiting_list.append(self.selected_num)
                 else:
-                    print("이미 요청된 차량")
+                    #print("이미 요청된 차량")
                     QMessageBox.information(self, "info", "이미 요청된 차량입니다.")
 
                 self.table_waiting.setRowCount(len(self.car_waiting_list))
@@ -176,7 +171,7 @@ class WindowClass(QMainWindow, from_class) :
 
                 self.selected_num = ""
                 self.lb_carnum.clear()
-                print("Signal")
+                #print("Signal")
                 self.car_num_data = []
             else:
                 return
@@ -186,7 +181,7 @@ class WindowClass(QMainWindow, from_class) :
             self.user_to_server_pub.user_to_server_pub_msg(send_text)   #ros2:send:cancle signal2->0
             self.stk_user.setCurrentIndex(0)
             self.car_num_data = []
-            print("back select")
+            #print("back select")
             
 
     #===stk2 function===
@@ -194,7 +189,7 @@ class WindowClass(QMainWindow, from_class) :
         self.table_select_car.clearSelection()
         self.table_select_car.setFocus()
         self.selected_num = self.table_select_car.item(row, column).text()
-        print(f"ROW {row} clicked: {self.selected_num}")
+        #print(f"ROW {row} clicked: {self.selected_num}")
         send_text = "D" + self.selected_num
         self.user_to_server_pub.user_to_server_pub_msg(send_text)
         self.stk_user.setCurrentIndex(1)
@@ -212,7 +207,7 @@ class WindowClass(QMainWindow, from_class) :
 
 
                 if len(self.car_num_data) >= 2:
-                    print("select: ", self.car_num_data)
+                    #print("select: ", self.car_num_data)
                     self.timer_stk02.start(500)
                     self.table_select_car.setRowCount(len(self.car_num_data))
                     self.table_select_car.setColumnCount(1)
@@ -222,13 +217,13 @@ class WindowClass(QMainWindow, from_class) :
                 self.car_num_data = []
                 receive_car_num = receive_data[:find_t]
                 self.in_time_info = receive_data[find_t+1:]
-                print(receive_car_num, " + " , self.in_time_info)
+                #print(receive_car_num, " + " , self.in_time_info)
 
                 self.car_num_data.append(receive_car_num)
 
                 self.timer_stk01.start(500)
                 self.selected_num = self.car_num_data[0]
-                print("select: ", self.selected_num)
+                #print("select: ", self.selected_num)
                 self.lb_in_time.setText(self.in_time_info)
 
                 cur_time = datetime.now().strftime("%m/%d %H:%M")

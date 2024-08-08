@@ -32,7 +32,7 @@
   <widget class="QPushButton" name="pbt_test">
    <property name="geometry">
     <rect>
-     <x>660</x>
+     <x>670</x>
      <y>10</y>
      <width>41</width>
      <height>31</height>

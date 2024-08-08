@@ -120,38 +120,24 @@
     <widget class="QWidget" name="gridLayoutWidget">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>380</x>
        <y>10</y>
-       <width>731</width>
+       <width>361</width>
        <height>41</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="2">
-       <widget class="QPushButton" name="pbt_C">
-        <property name="text">
-         <string>C</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="pbt_A">
-        <property name="text">
-         <string>A</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="pbt_B">
-        <property name="text">
-         <string>B</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="3">
        <widget class="QPushButton" name="pbt_D">
         <property name="text">
          <string>D</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pbt_C">
+        <property name="text">
+         <string>C</string>
         </property>
        </widget>
       </item>
@@ -173,7 +159,7 @@
      </column>
      <column>
       <property name="text">
-       <string>CAR_NUM</string>
+       <string>RB_BATTERY</string>
       </property>
      </column>
      <column>
@@ -184,16 +170,6 @@
      <column>
       <property name="text">
        <string>EPT</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>RUN_TIME</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>TEMP</string>
       </property>
      </column>
     </widget>
@@ -221,6 +197,32 @@
        <string>CAR_NUM</string>
       </property>
      </column>
+    </widget>
+    <widget class="QWidget" name="horizontalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>371</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="pbt_A">
+        <property name="text">
+         <string>Graph</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbt_B">
+        <property name="text">
+         <string>Map</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </widget>
   </widget>

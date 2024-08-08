@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtCore import Qt, QPoint, QTimer
+from PyQt5.QtCore import Qt, QPoint, QTimer, QThread, pyqtSignal
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -13,6 +13,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
+
+import rclpy as rp
+from rclpy.node import Node
+from std_msgs.msg import String
 
 #from PyQt5.QtWidgets import QWidget
 
@@ -46,12 +50,20 @@ class BDConnector:
 from_class = uic.loadUiType("GUI/Admin/manager_gui.ui")[0]   #change path
 #===main window===
 class WindowClass(QMainWindow, BDConnector, from_class) :
-    def __init__(self):
+    def __init__(self, ros2_thread):
         super().__init__()
         self.setupUi(self)
 
         self.setWindowTitle("Hello, Qt!")
         self.setFixedSize(750, 550)
+
+        self.ros2_thread = ros2_thread
+        self.ros2_thread.rx_signal.connect(self.received_and_print)
+
+        self.timer_table_map_info = QTimer(self)
+        self.timer_table_map_info.timeout.connect(self.load_map_info)
+        self.timer_table_map_info.start(1000)
+        self.check_count = 0
 
         self.table_check_flow.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table_check_flow.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -63,6 +75,9 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
         self.pbt_A.clicked.connect(self.open_total_graph)
         self.pbt_B.clicked.connect(self.open_map_info)
         self.pbt_D.clicked.connect(self.check_value)
+
+        self.pbt_C.hide()
+        self.pbt_D.hide()
 
         self.le_ID.returnPressed.connect(self.check_manager_info)
         self.le_PW.returnPressed.connect(self.check_manager_info)
@@ -78,6 +93,103 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
 
         self.load_map_info()
 
+        self.test_list = []
+
+        self.line_R1 = "R1, wait, wait, wait"
+        self.line_R2 = "R2, wait, wait, wait"
+        self.line_R3 = "R3, wait, wait, wait"
+
+        self.table_data_list = []
+
+        self.table_set_base = " ,  ,  ,  "
+        self.table_data_list.append(self.line_R1)
+        self.table_data_list.append(self.line_R2)
+        self.table_data_list.append(self.line_R3)
+
+        self.table_show()
+
+    #===test===
+    def table_show(self):
+        num_rows = len(self.table_data_list)
+        num_columns = len(self.table_data_list[0].split(', '))
+
+        self.table_check_flow.setRowCount(num_rows)
+        self.table_check_flow.setColumnCount(num_columns)
+
+        for i, item in enumerate(self.table_data_list):
+            data = item.split(', ')
+            for j, value in enumerate(data):
+                self.table_check_flow.setItem(i, j, QTableWidgetItem(value))
+
+    def modify_table_data(self, row, column, new_value):
+        data = self.table_data_list[row].split(', ')
+        data[column] = new_value
+        self.table_data_list[row] = ', '.join(data)
+
+    def received_and_print(self, msg):
+        received_data = msg   #BR1B030 or PR1SI2TB2
+
+        if received_data[0] == "B":   #battery
+            step1 = received_data[1:]
+            self.get_robot_battery(step1)
+
+        elif received_data[0] == "P":   #position
+            step1 = received_data[1:]
+            self.get_robot_position(step1)
+
+        print("data check: ", msg)
+
+
+    def get_robot_battery(self, data):
+        data = data
+        rb_id = data[0:2]
+        battery = data[3:]
+
+        if battery[0] == "0" and battery[1] == "0":  #0~9
+            rb_battery = battery[2:]
+        elif battery[0] == "0" and battery[1] != "0":   #10~99
+            rb_battery = battery[1:]
+        else:  #100
+            rb_battery = battery
+
+        if rb_id == "R1":
+            self.modify_table_data(0, 1, rb_battery)
+
+        elif rb_id == "R2":
+            self.modify_table_data(1, 1, rb_battery)
+
+        elif rb_id == "R3":
+            self.modify_table_data(2, 1, rb_battery)
+
+        else:   #pass
+            pass
+
+        self.table_show()
+
+
+
+    def get_robot_position(self, data):
+        data = data
+        rb_id = data[0:2]
+        rb_stpt = data[3:5]
+        rb_ept = data[6:8]
+
+        if rb_id == "R1":
+            self.modify_table_data(0, 2, rb_stpt)
+            self.modify_table_data(0, 3, rb_ept)
+
+        elif rb_id == "R2":
+            self.modify_table_data(1, 2, rb_stpt)
+            self.modify_table_data(1, 3, rb_ept)
+
+        elif rb_id == "R3":
+            self.modify_table_data(2, 2, rb_stpt)
+            self.modify_table_data(2, 3, rb_ept)
+
+        else:   #pass
+            pass
+
+        self.table_show()
 
     #===open window function===
     def open_total_graph(self):
@@ -128,7 +240,8 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
             self.connect_to_database()
 
             query = "SELECT PARK_INFO.PK_NUM, PARK_INFO.PK_STATUS, CAR_INFO.CAR_NUM \
-                    FROM PARK_INFO LEFT JOIN CAR_INFO ON PARK_INFO.PK_NUM = CAR_INFO.PK_NUM"
+                    FROM PARK_INFO LEFT JOIN CAR_INFO ON PARK_INFO.PK_NUM = CAR_INFO.PK_NUM \
+                    WHERE PARK_INFO.PK_NUM NOT LIKE 'R%'"
             cursor.execute(query)
             rows = cursor.fetchall()
 
@@ -141,6 +254,8 @@ class WindowClass(QMainWindow, BDConnector, from_class) :
                     else:
                         item = QTableWidgetItem(str(col_data))
                     self.table_map_info.setItem(row_idx, col_idx, item)
+            self.check_count += 1
+            print(self.check_count)
 
         except mysql.connector.Error as e:
             print("Error")
@@ -195,70 +310,52 @@ class TotalGraph(QDialog):
         self.layout_day_out.addWidget(self.canvas3)
         self.layout_hour_out.addWidget(self.canvas4)
 
-        self.testdata_x = ['Sun', 'Mon', 'Tus', 'Wed', 'Thu', 'Fri', 'Sat']
-        self.testdata_y = [2, 7, 6, 8, 3, 3, 4]
-
         self.graph_draw()
 
     def graph_draw(self):   #test
+        weekdata_x = ['Sun', 'Mon', 'Tus', 'Wed', 'Thu', 'Fri', 'Sat']
+        daydata_x = ['morning', 'day', 'evening', 'night']
+        weekdata_y_in = [5, 7, 6, 4, 3, 3, 2]
+        weekdata_y_out = [4, 7, 7, 4, 3, 5, 3]
+        daydata_y_in = [6, 3, 1, 1]
+        daydata_y_out = [3, 2, 7, 4]
         #===day_in===
-        x = self.testdata_x
-        y = self.testdata_y
-
         ax = self.fig.add_subplot(111)
-        ax.plot(x, y, label="sin")
-        ax.set_xlabel("x")
-        ax.set_xlabel("y")
-        ax.set_title("my test graph")
-        ax.legend()
+        ax.plot(weekdata_x, weekdata_y_in, label="")
+
         ax.set_ylim(0, 10)
+        ax.legend()
         self.canvas.draw()
 
         #===hour_in===
-        x2 = self.testdata_x
-        y2 = self.testdata_y
-
         ax2 = self.fig2.add_subplot(111)
-        ax2.bar(x2, y2, label="test2")
-        # ax2.set_xlabel("hour")
-        # ax2.set_ylabel("car")
-        # ax2.set_title("hour in")
-        ax2.legend()
+        ax2.bar(daydata_x, daydata_y_in, label="")
+        
         ax2.set_ylim(0, 10)
-        self.fig2.tight_layout()
+        ax2.set_yticks(range(0, 10, 2))
+        ax2.legend()
         self.fig2.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2)
         self.canvas2.draw()
 
 
         #===day_out===
-        x3 = np.arange(0, 50, 1)
-        y3 = np.sin(x3)
-
         ax3 = self.fig3.add_subplot(111)
-        ax3.plot(x3, y3, label="sin")
-        ax3.set_xlabel("x3")
-        ax3.set_xlabel("y3")
+        ax3.plot(weekdata_x, weekdata_y_out, label="")
+        ax3.set_ylim(0, 10)
 
-        ax3.set_title("my sin graph")
         ax3.legend()
         self.canvas3.draw()
 
         #===hour_out===
-        x4 = self.testdata_x
-        y4 = self.testdata_y
-
         ax4 = self.fig4.add_subplot(111)
-        ax4.bar(x4, y4, label="test24")
-        ax4.set_xlabel("hour")
-        ax4.set_ylabel("car")
-        ax4.set_title("hour out")
-        ax4.legend()
+        ax4.bar(daydata_x, daydata_y_out, label="")
         ax4.set_ylim(0, 10)
+        ax4.set_yticks(range(0, 10, 2))
+        ax4.legend()
+        self.fig4.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2)
         self.canvas4.draw()
 
     def closeEvent(self, event):
-        #self.parent().show()
-        #self.parent().move(self.pos())
         self.parent().remove_window_list(self.parent().graph_window)
         self.parent().flag_open_graph = False
         super().closeEvent(event)
@@ -280,11 +377,7 @@ class MapInfo(QDialog, BDConnector):
         self.map_update()
 
         self.count = 0
-        #self.charging_area()
-
-        
-
-        
+  
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -305,8 +398,6 @@ class MapInfo(QDialog, BDConnector):
             self.lb_map.setPixmap(self.pixmap_map_image)
 
             if founds:
-                print("OK")
-                print(founds)
                 painter = QPainter(self.pixmap_map_image)
                 
                 if not painter.isActive():
@@ -321,7 +412,7 @@ class MapInfo(QDialog, BDConnector):
 
                 for pk_num, car_num in founds:
                     coords = park_geo.get(pk_num, "not found")
-                    print(f"PK_NUM:{pk_num}, CAR_NUM:{car_num}, Coordinates:{coords}")
+                    #print(f"PK_NUM:{pk_num}, CAR_NUM:{car_num}, Coordinates:{coords}")
 
                     if coords != "not found":
                         painter.drawText(coords[0], coords[1], car_num)
@@ -361,19 +452,59 @@ class MapInfo(QDialog, BDConnector):
         
 
     def closeEvent(self, event):
-        #self.parent().show()
-        #self.parent().move(self.pos())
         self.parent().remove_window_list(self.parent().map_window)
         self.parent().flag_open_map = False
         self.update_timer.stop()
         super().closeEvent(event)
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    myWindows = WindowClass()
-    myWindows.show()
+class Server_To_Admin_Sub(Node):   #/server_and_admin sub
+    def __init__(self):
+        super().__init__("admin_gui")
+        self.subscription = self.create_subscription(
+            String,
+            "/server_and_admin",
+            self.robot_battery_listener_callback,
+            10
+        )
+        self.subscription
+        self.latest_msg = ""
 
-    sys.exit(app.exec_())
+    def robot_battery_listener_callback(self, msg):
+        self.latest_msg = msg.data
+        self.get_logger().info(f"Received: '{msg.data}'")
+
+class Ros2Thread(QThread):
+    rx_signal = pyqtSignal(str)
+    def __init__(self):
+        super().__init__()
+        rp.init()
+        self.node = Server_To_Admin_Sub()
+    
+    def run(self):
+        while rp.ok():
+            rp.spin_once(self.node)
+            if self.node.latest_msg:
+                self.rx_signal.emit(self.node.latest_msg)
+
+
+
+def main():
+    app = QApplication(sys.argv)
+    ros2_thread = Ros2Thread()
+    myWindows = WindowClass(ros2_thread)
+    myWindows.show()
+    ros2_thread.start()
+
+    try:
+        sys.exit(app.exec_())
+    finally:
+        rp.shutdown()
+        ros2_thread.node.destroy_node()
+
+
+
+if __name__ == "__main__":
+    main()
 
 
 

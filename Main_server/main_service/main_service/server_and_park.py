@@ -65,12 +65,12 @@ class Server_And_User(Node, DBconnector):
         self.out_signal_sub
 
 
-        self.park_num_10_sub = self.create_subscription(
+        self.park_num_99_sub = self.create_subscription(
             String,
             "/send_park_num_99",   #change and test
-            self.park_num_10_listener_callback,
+            self.park_num_99_listener_callback,
             10)
-        self.park_num_10_sub
+        self.park_num_99_sub
         self.park_num_23_sub = self.create_subscription(
             String,
             "/send_park_num_23",
@@ -85,9 +85,31 @@ class Server_And_User(Node, DBconnector):
         self.park_num_68_sub
 
 
+#===add===
+        self.robot_battery_23_sub = self.create_subscription(
+            String,
+            "robot_battery_23",
+            self.robot_battery_23_listner_callback,
+            10)
+        self.robot_battery_23_sub
+        self.robot_battery_99_sub = self.create_subscription(
+            String,
+            "robot_battery_99",
+            self.robot_battery_99_listner_callback,
+            10)
+        self.robot_battery_99_sub
+        self.robot_battery_68_sub = self.create_subscription(
+            String,
+            "robot_battery_68",
+            self.robot_battery_68_listner_callback,
+            10)
+        self.robot_battery_68_sub
+
+
 #=====pub=====
         self.server_to_user_pub = self.create_publisher(String, "/server_to_user", 10)   #send data to user gui
         self.park_num_pub = self.create_publisher(String, "/send_park_num", 10)   #send data to another server
+        self.server_to_admin_pub = self.create_publisher(String, "/server_and_admin", 10)   #send data to admin
 
 
 #=====variable=====
@@ -131,12 +153,10 @@ class Server_And_User(Node, DBconnector):
                             self.cursor.execute(query, (car_full_num,))
                             find_result = self.cursor.fetchone()
                             in_time_info = find_result[0]
-                            print("in time info: ", in_time_info)
 
                             if self.flag_search_num == False or len(received_data) > 4:   #to send car num once
                                 send_user_msg.data = "D" + car_full_num + "T" + in_time_info  #ex. D77가7777T08/06 13:00
                                 self.server_to_user_pub.publish(send_user_msg)
-                                print("TEST")
                                 self.flag_search_num = True
                             #else:                            
                             self.park_num_data = row[1]   #to send park num(/send_park_num)
@@ -161,7 +181,6 @@ class Server_And_User(Node, DBconnector):
 
                     if signal_from_user == "req_ready":   #push pbt_out_signal(ready) -> move to GX
                         self.cpk_num_list.append(self.cpk_num_data)
-                        print("test2: ", self.cpk_num_list)
                         query = "SELECT PK_NUM, PK_STATUS FROM PARK_INFO WHERE PK_NUM LIKE 'G%'"   #find park num G and status
                         self.cursor.execute(query)
                         find_results = self.cursor.fetchall()   #ex. [('G1', 'F'), ('G2', 'F')]
@@ -178,7 +197,6 @@ class Server_And_User(Node, DBconnector):
                         query = "SELECT PK_NUM, PK_STATUS FROM PARK_INFO WHERE PK_NUM='E2'"
                         self.cursor.execute(query)
                         find_result = self.cursor.fetchone()   #ex. ('E2', 'T')
-                        print(find_result)
                         if self.park_num_data == "A2" and find_result[1] == 'T':
                             send_park_num_msg.data = "R" + self.park_num_data + "T" + goal_park_num + "M"   #RA2TG1M
                             print("OOOOO: ", send_park_num_msg.data)
@@ -187,7 +205,6 @@ class Server_And_User(Node, DBconnector):
                             find_result = self.cursor.fetchone()
                             step1 = find_result[0] + ", " + find_result[1]
                             self.cpk_num_list.append(step1)
-                            print(step1)
                         else:
                             send_park_num_msg.data = "R" + self.park_num_data + "T" + goal_park_num
     
@@ -220,7 +237,6 @@ class Server_And_User(Node, DBconnector):
                         step2 = re.split(", ", step1)
                         list_car_num = step2[0]
                         list_park_num = step2[1]   #pk num(now)
-                        print("test4: ", self.cpk_num_list)
                         query = "SELECT PK_NUM, PK_STATUS FROM PARK_INFO WHERE PK_NUM='O1'"
                         self.cursor.execute(query)
                         find_results = self.cursor.fetchall()   #ex. ('O1', 'F')
@@ -239,16 +255,6 @@ class Server_And_User(Node, DBconnector):
                         if goal_park_num == "OX":
                             self.wait_line_O.append(send_park_num_msg.data)
                         else:
-                            #query = "UPDATE CAR_INFO SET PK_NUM=%s WHERE CAR_NUM=%s"
-                            #self.cursor.execute(query, (goal_park_num, car_num,))
-
-                            #for each in self.cpk_num_list:
-                            #    if car_num in each:
-                            #        step1 = each
-                            #        self.cpk_num_list = [item for item in self.cpk_num_list if item != each]
-                            #step1 = list_car_num + ", " + list_park_num
-                            #self.cpk_num_list.append(step1)
-
                             query = "UPDATE PARK_INFO SET PK_STATUS=%s WHERE PK_NUM=%s"
                             self.cursor.execute(query, ('F', list_park_num,))
                             self.cursor.execute(query, ('T', goal_park_num,))
@@ -273,25 +279,25 @@ class Server_And_User(Node, DBconnector):
                 self.get_logger().error("DB error in user_gui_listener_callback")
 
 
-    def park_num_10_listener_callback(self, msg):
-        print("A")
+    def park_num_99_listener_callback(self, msg):
+        print("ROBOT 99")
         received_data = msg.data
         rb_id = "R1"
         self.receive_park_num(rb_id, received_data)
 
     def park_num_23_listener_callback(self, msg):
-        print("B")
+        print("ROBOT 23")
         received_data = msg.data
         rb_id = "R2"
         self.receive_park_num(rb_id, received_data)
 
     def park_num_68_listener_callback(self, msg):
-        print("C")
+        print("ROBOT 68")
         received_data = msg.data
         rb_id = "R3"
         self.receive_park_num(rb_id, received_data)
 
-#=====add=====
+
     def in_time_listner_callback(self, msg):
         received_data = msg.data
         send_park_num_msg = String()
@@ -308,7 +314,6 @@ class Server_And_User(Node, DBconnector):
                     query = "SELECT PK_NUM, PK_STATUS FROM PARK_INFO WHERE PK_NUM LIKE %s OR PK_NUM LIKE %s OR PK_NUM LIKE %s"
                     self.cursor.execute(query, (*select_query_pm,))
                     find_results = self.cursor.fetchall()
-                    print(find_results)   #OK
 
                     goal_park_num = ""
                     if find_results[0][1] == 'F':   #A2 = 'F'
@@ -324,7 +329,6 @@ class Server_And_User(Node, DBconnector):
                     if goal_park_num:
                         in_car_num_text = in_car_num + ", " + 'I1'
                         self.cpk_num_list.append(in_car_num_text)
-                        print(self.cpk_num_list)
 
                         send_park_num_msg.data = "R" + "I1" + "T" + goal_park_num
                         self.park_num_pub.publish(send_park_num_msg)
@@ -340,18 +344,50 @@ class Server_And_User(Node, DBconnector):
             except Error as e:
                 self.get_logger().error("DB error in rfid_signal_listner_callback")
 
+#===add===
+    def robot_battery_99_listner_callback(self, msg):   #rb_id = "R1"
+        send_admin_msg = String()
+        received_data = msg.data
+        rb_id = received_data[0:2]
+        rb_battery = received_data[3:]
+
+        send_admin_msg.data = "B" + rb_id + "B" + rb_battery
+        self.server_to_admin_pub.publish(send_admin_msg)
+
+    def robot_battery_23_listner_callback(self, msg):   #rb_id = "R2"
+        send_admin_msg = String()
+        received_data = msg.data
+        rb_id = received_data[0:2]
+        rb_battery = received_data[3:]
+
+        send_admin_msg.data = "B" + rb_id + "B" + rb_battery
+        self.server_to_admin_pub.publish(send_admin_msg)
+
+    def robot_battery_68_listner_callback(self, msg):   #rb_id = "R3"
+        send_admin_msg = String()
+        received_data = msg.data
+        rb_id = received_data[0:2]
+        rb_battery = received_data[3:]
+
+        send_admin_msg.data = "B" + rb_id + "B" + rb_battery
+        self.server_to_admin_pub.publish(send_admin_msg)
 
 #===function===
     def receive_park_num(self, rb_id, data):   #/send_park_num
         received_data = data
-        rb_id = rb_id   #현재 사용처 없음
+        rb_id = rb_id   #server_to_admin P
         send_user_msg = String()
+        send_admin_msg = String()
 
         if self.connection and self.cursor:
             try:
                 if received_data[0] == "S":   #Start(~end)
                     start_park_num = received_data[1:3]   #S
                     end_park_num = received_data[4:6]   #T
+
+                    send_admin_msg.data = "P" + rb_id + received_data   #ex. PR1SI2TB2
+                    self.server_to_admin_pub.publish(send_admin_msg)
+
                     for each in self.cpk_num_list:
                         if start_park_num in each:
                             step1 = each
@@ -361,7 +397,6 @@ class Server_And_User(Node, DBconnector):
                     list_car_num = step2[0]
                     list_park_num = step2[1]
 
-                    print("test: ", self.cpk_num_list)
 
                     if send_user_msg.data not in self.history_ready_list:   #except same num
                         if end_park_num == "G1" or end_park_num == "G2":
@@ -377,7 +412,6 @@ class Server_And_User(Node, DBconnector):
 
                     step1 = list_car_num + ", " + end_park_num
                     self.cpk_num_list.append(step1)
-                    print("test3: ", self.cpk_num_list)
 
                     if end_park_num == "G1" or end_park_num == "G2":
                         self.set_timer(end_park_num)
@@ -419,20 +453,11 @@ class Server_And_User(Node, DBconnector):
                     for each in self.cpk_num_list:
                         if timeout_pk_num in each:
                             step1 = each
-                            #self.cpk_num_list = [item for item in self.cpk_num_list if item != each]
-                    #step2 = re.split(", ", step1)
-                    #update_car_num = step2[0]
-
-                    #query = "UPDATE CAR_INFO SET PK_NUM=%s WHERE CAR_NUM=%s"
-                    #self.cursor.execute(query, (goal_park_num, update_car_num,))
 
                     query = "UPDATE PARK_INFO SET PK_STATUS=%s WHERE PK_NUM=%s"
                     self.cursor.execute(query, ('F', timeout_pk_num,))
                     self.cursor.execute(query, ('T', goal_park_num,))
                     self.connection.commit()
-
-                    #step3 = update_car_num + ", " + timeout_pk_num
-                    #self.cpk_num_list.append(step3)
 
                     if self.wait_line_G and self.wait_line_G[0]:
                         step1 = self.wait_line_G[0]
@@ -461,7 +486,6 @@ class Server_And_User(Node, DBconnector):
                     self.cursor.execute(query)
                     find_result = self.cursor.fetchone()
                     out_car_num = find_result[0]   #car num
-                    print("out_car_num: ", out_car_num)
 
                     query = "DELETE FROM CAR_INFO WHERE CAR_NUM=%s"
                     self.cursor.execute(query, (out_car_num,))
@@ -484,7 +508,6 @@ class Server_And_User(Node, DBconnector):
                     for each in self.cpk_num_list:
                         if out_car_num in each:
                             step1 = each
-                            print(step1)
                             self.cpk_num_list = [item for item in self.cpk_num_list if item != each]
 
             except Error as e:
